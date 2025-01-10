@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CrawlingServiceImpl implements CrawlingService {
+public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	@Value("${crawling.base-url}")
 	private String baseUrl;
@@ -60,9 +60,9 @@ public class CrawlingServiceImpl implements CrawlingService {
 				log.error("크롤링 실패 또는 Redis 저장 실패: ", e);
 			}
 		}
+		log.info("상품 데이터 Redis 저장 완료");
 	}
 
-	@Override
 	public LowestPriceDto crawlProductInfo(String pCode) throws IOException {
 		String url = baseUrl + pCode;
 
