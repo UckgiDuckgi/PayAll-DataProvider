@@ -50,11 +50,14 @@ public class CrawlingServiceImpl implements CrawlingService {
 			try {
 				LowestPriceDto lowestPriceDto = crawlProductInfo(pCode);
 				if (lowestPriceDto != null) {
-					saveToRedis(pCode, lowestPriceDto);
+					String key = "pCode:" + pCode;
+					String jsonValue = objectMapper.writeValueAsString(lowestPriceDto);
+					redisTemplate.opsForValue().set(key, jsonValue);
+					log.info("Saved to Redis - key: {}", key);
 					Thread.sleep(1000);
 				}
 			} catch (Exception e) {
-				log.error("크롤링 실패: {}", pCode, e);
+				log.error("크롤링 실패 또는 Redis 저장 실패: {}", pCode, e);
 			}
 		}
 	}
@@ -114,17 +117,6 @@ public class CrawlingServiceImpl implements CrawlingService {
 			throw new RuntimeException("Selenium 처리 중 오류", e);
 		} finally {
 			driver.quit();
-		}
-	}
-
-	private void saveToRedis(String pCode, LowestPriceDto lowestPriceDto) {
-		String key = "pCode:" + pCode;
-		try {
-			String jsonValue = objectMapper.writeValueAsString(lowestPriceDto);
-			redisTemplate.opsForValue().set(key, jsonValue);
-			log.info("Saved to Redis - key: {}", key);
-		} catch (Exception e) {
-			log.error("Failed to save to Redis: {}", key, e);
 		}
 	}
 
