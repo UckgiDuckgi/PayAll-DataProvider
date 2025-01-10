@@ -53,11 +53,11 @@ public class CrawlingServiceImpl implements CrawlingService {
 					String key = "pCode:" + pCode;
 					String jsonValue = objectMapper.writeValueAsString(lowestPriceDto);
 					redisTemplate.opsForValue().set(key, jsonValue);
-					log.info("Saved to Redis - key: {}", key);
+					log.info("Saved to Redis - {}", key);
 					Thread.sleep(1000);
 				}
 			} catch (Exception e) {
-				log.error("크롤링 실패 또는 Redis 저장 실패: {}", pCode, e);
+				log.error("크롤링 실패 또는 Redis 저장 실패: ", e);
 			}
 		}
 	}
@@ -82,7 +82,7 @@ public class CrawlingServiceImpl implements CrawlingService {
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
 						String shopImage = shopElement.select("img").attr("src").trim();
 						String shopUrl = getShopUrl(shopElement.attr("href"));
-						System.out.println("shopUrl = " + shopUrl);
+						// System.out.println("shopUrl = " + shopUrl);
 						return LowestPriceDto.builder()
 							.productName(productName)
 							.productImage(productImage)
@@ -97,7 +97,7 @@ public class CrawlingServiceImpl implements CrawlingService {
 			return null;
 
 		} catch (IOException e) {
-			log.error("크롤링 실패: {}", pCode, e);
+			log.error("크롤링 실패 - pcode: {}, error: {}", pCode, e.getMessage());
 			throw e;
 		}
 
