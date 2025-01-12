@@ -1,6 +1,10 @@
 package com.example.PayAll_DataProvider.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
+
+import com.example.PayAll_DataProvider.entity.Account;
 
 import lombok.RequiredArgsConstructor;
 
@@ -8,9 +12,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MydataServiceImpl implements MydataService{
 	@Override
-	public Object getAccountList(String authorization, String transactionId, String apiType, String orgCode,
-		String searchTimestamp, String nextPage, int limit) {
-
+	public List<Account> getAccounts(Long userId) {
 		return null;
 	}
 }

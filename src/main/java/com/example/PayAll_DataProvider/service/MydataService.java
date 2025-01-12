@@ -1,6 +1,8 @@
 package com.example.PayAll_DataProvider.service;
 
+import com.example.PayAll_DataProvider.entity.Account;
+import java.util.*;
+
 public interface MydataService {
-	Object getAccountList(String authorization, String transactionId, String apiType, String orgCode,
-		String searchTimestamp, String nextPage, int limit);
+	List<Account> getAccounts(Long userId);
 }

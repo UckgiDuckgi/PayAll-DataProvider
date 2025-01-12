@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "users") // 테이블명을 user에서 users로 변경
+@Table
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
