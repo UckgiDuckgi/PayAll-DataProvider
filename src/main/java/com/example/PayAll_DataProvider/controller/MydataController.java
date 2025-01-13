@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class MydataController {
 
 	private final MydataService mydataService;
-
+//test
 	@GetMapping
 	public ResponseEntity<Map<String, Object>> getAccountList(
 		@RequestHeader("Authorization") String authorization,
