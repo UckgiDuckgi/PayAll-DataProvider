@@ -41,7 +41,6 @@ public class MydataController {
 		Long userId = 1L;
 		// 계좌 목록 조회
 		GetAccountsDto accounts = mydataService.getAccounts(userId, searchTimestamp, nextPage, limit);
-		System.out.println("accounts = " + accounts.getAccountList());
 
 		// AccountResponseDto 빌드
 		AccountListResponseDto response = AccountListResponseDto.builder()
