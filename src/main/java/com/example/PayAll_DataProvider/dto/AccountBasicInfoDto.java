@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class AccountBasicInfoDto {
-	private String accountNum;        // 계좌 번호
+	private String accountNum;        // 계좌번호
 	private String baseDate;          // 기준일자
 	private String currencyCode;      // 통화 코드
 	private BigDecimal withholdingsAmt; // 예수금
