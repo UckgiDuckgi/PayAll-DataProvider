@@ -1,5 +1,7 @@
 package com.example.PayAll_DataProvider.service;
 
+import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,8 +9,12 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import com.example.PayAll_DataProvider.dto.AccountDto;
+import com.example.PayAll_DataProvider.dto.AccountResponseDto;
+import com.example.PayAll_DataProvider.dto.AccountBasicInfoDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
 import com.example.PayAll_DataProvider.entity.Account;
+import com.example.PayAll_DataProvider.entity.AccountBasicInfo;
+import com.example.PayAll_DataProvider.repository.AccountBasicInfoRepository;
 import com.example.PayAll_DataProvider.repository.AccountRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MydataServiceImpl implements MydataService{
 	private final AccountRepository accountRepository;
+	private final AccountBasicInfoRepository accountBasicInfoRepository;
 
 	// 최근 조회 시간을 저장하는 Map (Key: UserId, Value: searchTimestamp)
 	private final Map<Long, String> lastSearchTimestamp = new HashMap<>();
@@ -69,5 +76,34 @@ public class MydataServiceImpl implements MydataService{
 	@Override
 	public String getLastSearchTimestamp(Long userId) {
 		return lastSearchTimestamp.getOrDefault(userId, "0");
+	}
+
+	@Override
+	public AccountResponseDto getAccountBasicInfo(String accountNum) {
+		// 계좌 기본 정보 조회
+		AccountBasicInfo accountBasicInfo = accountBasicInfoRepository.findByAccountNum(accountNum)
+			.orElseThrow(() -> new IllegalArgumentException("해당 계좌 정보를 찾을 수 없습니다."));
+
+		// AccountBasicInfo 데이터를 DTO로 변환
+		AccountBasicInfoDto basicInfoDto = AccountBasicInfoDto.builder()
+			.accountNum(accountBasicInfo.getAccount().getAccountNum())
+			.baseDate(accountBasicInfo.getBaseDate().toString())
+			.currencyCode(accountBasicInfo.getCurrencyCode())
+			.withholdingsAmt(accountBasicInfo.getWithholdingsAmt())
+			.creditLoanAmt(accountBasicInfo.getCreditLoanAmt() != null ? accountBasicInfo.getCreditLoanAmt() : BigDecimal.ZERO)
+			.mortgageAmt(accountBasicInfo.getMortgageAmt() != null ? accountBasicInfo.getMortgageAmt() : BigDecimal.ZERO)
+			.availBalance(accountBasicInfo.getAvailBalance())
+			.build();
+
+		// 응답 데이터 구성
+		AccountResponseDto response = AccountResponseDto.builder()
+			.rspCode("0000")
+			.rspMsg("정상 처리")
+			.baseDate(accountBasicInfo.getBaseDate().toString())
+			.basicCnt(1)
+			.basicList(Collections.singletonList(basicInfoDto))
+			.build();
+
+		return response;
 	}
 }
