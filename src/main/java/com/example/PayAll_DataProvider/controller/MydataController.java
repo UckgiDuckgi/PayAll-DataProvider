@@ -13,6 +13,8 @@ import com.example.PayAll_DataProvider.dto.AccountListResponseDto;
 import com.example.PayAll_DataProvider.dto.AccountRequestDto;
 import com.example.PayAll_DataProvider.dto.AccountResponseDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
+import com.example.PayAll_DataProvider.dto.TransactionRequestDto;
+import com.example.PayAll_DataProvider.dto.TransactionResponseDto;
 import com.example.PayAll_DataProvider.service.MydataService;
 
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,7 @@ public class MydataController {
 
 		return ResponseEntity.ok(response);
 	}
+
 	@PostMapping("basic")
 	public ResponseEntity<AccountResponseDto> getAccountBasicInfo(
 		@RequestHeader("Authorization") String authorization,
@@ -60,6 +63,17 @@ public class MydataController {
 		@RequestBody AccountRequestDto accountRequest
 	){
 		AccountResponseDto response = mydataService.getAccountBasicInfo(accountRequest.getAccountNum());
+		return ResponseEntity.ok(response);
+	}
+
+	@PostMapping("/transactions")
+	public ResponseEntity<TransactionResponseDto> getAccountTransactions(
+		@RequestHeader("Authorization") String authorization,
+		@RequestHeader("x-api-tran-id") String transactionId,
+		@RequestHeader("x-api-type") String apiType,
+		@RequestBody TransactionRequestDto request
+	) {
+		TransactionResponseDto response = mydataService.getMydataTransactions(request);
 		return ResponseEntity.ok(response);
 	}
 }

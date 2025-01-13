@@ -11,19 +11,25 @@ import org.springframework.stereotype.Service;
 import com.example.PayAll_DataProvider.dto.AccountDto;
 import com.example.PayAll_DataProvider.dto.AccountResponseDto;
 import com.example.PayAll_DataProvider.dto.AccountBasicInfoDto;
+import com.example.PayAll_DataProvider.dto.AccountTransactionDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
+import com.example.PayAll_DataProvider.dto.TransactionRequestDto;
+import com.example.PayAll_DataProvider.dto.TransactionResponseDto;
 import com.example.PayAll_DataProvider.entity.Account;
 import com.example.PayAll_DataProvider.entity.AccountBasicInfo;
+import com.example.PayAll_DataProvider.entity.AccountTransaction;
 import com.example.PayAll_DataProvider.repository.AccountBasicInfoRepository;
 import com.example.PayAll_DataProvider.repository.AccountRepository;
+import com.example.PayAll_DataProvider.repository.AccountTransactionRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class MydataServiceImpl implements MydataService{
+public class MydataServiceImpl implements MydataService {
 	private final AccountRepository accountRepository;
 	private final AccountBasicInfoRepository accountBasicInfoRepository;
+	private final AccountTransactionRepository accountTransactionRepository;
 
 	// 최근 조회 시간을 저장하는 Map (Key: UserId, Value: searchTimestamp)
 	private final Map<Long, String> lastSearchTimestamp = new HashMap<>();
@@ -90,8 +96,10 @@ public class MydataServiceImpl implements MydataService{
 			.baseDate(accountBasicInfo.getBaseDate().toString())
 			.currencyCode(accountBasicInfo.getCurrencyCode())
 			.withholdingsAmt(accountBasicInfo.getWithholdingsAmt())
-			.creditLoanAmt(accountBasicInfo.getCreditLoanAmt() != null ? accountBasicInfo.getCreditLoanAmt() : BigDecimal.ZERO)
-			.mortgageAmt(accountBasicInfo.getMortgageAmt() != null ? accountBasicInfo.getMortgageAmt() : BigDecimal.ZERO)
+			.creditLoanAmt(
+				accountBasicInfo.getCreditLoanAmt() != null ? accountBasicInfo.getCreditLoanAmt() : BigDecimal.ZERO)
+			.mortgageAmt(
+				accountBasicInfo.getMortgageAmt() != null ? accountBasicInfo.getMortgageAmt() : BigDecimal.ZERO)
 			.availBalance(accountBasicInfo.getAvailBalance())
 			.build();
 
@@ -102,6 +110,43 @@ public class MydataServiceImpl implements MydataService{
 			.baseDate(accountBasicInfo.getBaseDate().toString())
 			.basicCnt(1)
 			.basicList(Collections.singletonList(basicInfoDto))
+			.build();
+
+		return response;
+	}
+
+	@Override
+	public TransactionResponseDto getMydataTransactions(TransactionRequestDto request) {
+
+		List<AccountTransaction> accountTransactions = accountTransactionRepository.findTransactions(
+			request.getAccountNum(),
+			request.getFromDate(),
+			request.getToDate(),
+			request.getLimit(),
+			request.getNextPage()
+		);
+
+		List<AccountTransactionDto> transactionDtos = accountTransactions.stream()
+			.map(transaction -> AccountTransactionDto.builder()
+				.prodName(transaction.getProdName())
+				.prodCode(transaction.getProdCode())
+				.transDtime(transaction.getTransDtime().toLocalDateTime())
+				.transNo(transaction.getTransNo())
+				.transType(transaction.getTransType())
+				.transTypeDetail(transaction.getTransTypeDetail())
+				.transNum(transaction.getTransNum())
+				.transUnit(transaction.getTransUnit())
+				.build()
+			)
+			.toList();
+
+		// 응답 데이터 구성
+		TransactionResponseDto response = TransactionResponseDto.builder()
+			.rspCode("0000")
+			.rspMsg("정상 처리")
+			.nextPage(null)
+			.transCnt(transactionDtos.size())
+			.transList(transactionDtos)
 			.build();
 
 		return response;
