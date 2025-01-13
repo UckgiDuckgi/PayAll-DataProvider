@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.PayAll_DataProvider.dto.AccountDto;
+import com.example.PayAll_DataProvider.dto.GetAccountsDto;
 import com.example.PayAll_DataProvider.entity.Account;
 import com.example.PayAll_DataProvider.service.MydataService;
 
@@ -35,13 +37,15 @@ public class MydataController {
 
 		// userId를 1로 가정하여 데이터 조회
 		Long userId = 1L;
-		List<Account> accounts = mydataService.getAccounts(userId);
+		// 계좌 목록 조회
+		GetAccountsDto accounts = mydataService.getAccounts(userId, searchTimestamp, nextPage, limit);
 
 		// 응답 데이터 구성
 		Map<String, Object> response = new HashMap<>();
 		response.put("rsp_code", "0000"); // 성공 코드
 		response.put("rsp_msg", "정상 처리"); // 성공 메시지
-		response.put("account_cnt", accounts.size()); // 계좌 수
+		response.put("search_timestamp", mydataService.getLastSearchTimestamp(userId)); // 최신 타임스탬프 반환
+		response.put("account_cnt", accounts.getAccountList().size()); // 계좌 수
 		response.put("account_list", accounts); // 계좌 목록
 
 		return ResponseEntity.ok(response);

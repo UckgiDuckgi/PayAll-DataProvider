@@ -1,8 +1,10 @@
 package com.example.PayAll_DataProvider.service;
 
+import com.example.PayAll_DataProvider.dto.GetAccountsDto;
 import com.example.PayAll_DataProvider.entity.Account;
 import java.util.*;
 
 public interface MydataService {
-	List<Account> getAccounts(Long userId);
+	public GetAccountsDto getAccounts(Long userId, String searchTimestamp, String nextPage, int limit);
+	public String getLastSearchTimestamp(Long userId);
 }

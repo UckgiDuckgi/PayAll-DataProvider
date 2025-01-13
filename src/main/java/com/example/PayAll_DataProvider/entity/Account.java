@@ -7,11 +7,12 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "account")
-@Data
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Account {
@@ -43,7 +44,7 @@ public class Account {
 	@Column(nullable = false)
 	private Boolean isAccountLink;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 
