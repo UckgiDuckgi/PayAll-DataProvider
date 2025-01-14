@@ -92,7 +92,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 					if (shops.contains(shopName)) {
 						Long price = Long.parseLong(
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
-						String shopImage = shopElement.select("img").attr("src").trim();
+						// String shopImage = shopElement.select("img").attr("src").trim();
 						String shopUrl = getShopUrl(shopElement.attr("href"));
 						// System.out.println("shopUrl = " + shopUrl);
 						return LowestPriceDto.builder()
@@ -100,7 +100,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 							.productName(productName)
 							.productImage(productImage)
 							.price(price)
-							.shopImage(shopImage)
 							.shopName(shopName)
 							.shopUrl(shopUrl).build();
 					}

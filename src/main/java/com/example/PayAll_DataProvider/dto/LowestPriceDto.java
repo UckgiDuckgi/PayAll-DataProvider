@@ -10,7 +10,6 @@ public class LowestPriceDto {
 	private String productName;
 	private String productImage;
 	private Long price;
-	private String shopImage;
 	private String shopName;
 	private String shopUrl;
 }
