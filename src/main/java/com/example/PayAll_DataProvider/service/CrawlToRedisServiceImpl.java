@@ -17,6 +17,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.PayAll_DataProvider.dto.LowestPriceDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -43,6 +44,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"12673118", "2012426", "16454519", "1992016", "1008149"
 	);
 
+	// Redis에서 상품 정보 조회
+	@Override
+	public LowestPriceDto getProduct(String pCode) throws JsonProcessingException {
+		String productJson = (String)redisTemplate.opsForValue().get(pCode);
+		if (productJson == null) {
+			log.info("not found pCode");
+			return null;
+		}
+		return objectMapper.readValue(productJson, LowestPriceDto.class);
+
+	}
+
 	@Override
 	// @Scheduled(cron = "0 0 9 * * *")
 	public void saveProductToRedis() {
@@ -50,10 +63,9 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			try {
 				LowestPriceDto lowestPriceDto = crawlProductInfo(pCode);
 				if (lowestPriceDto != null) {
-					String key = "pCode:" + pCode;
 					String jsonValue = objectMapper.writeValueAsString(lowestPriceDto);
-					redisTemplate.opsForValue().set(key, jsonValue);
-					log.info("Saved to Redis - {}", key);
+					redisTemplate.opsForValue().set(pCode, jsonValue);
+					log.info("Saved to Redis - {}", pCode);
 					Thread.sleep(1000);
 				}
 			} catch (Exception e) {
@@ -78,16 +90,16 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				if (shopElement != null) {
 					String shopName = shopElement.select("img").attr("alt").trim();
 					if (shops.contains(shopName)) {
-						int price = Integer.parseInt(
+						Long price = Long.parseLong(
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
-						String shopImage = shopElement.select("img").attr("src").trim();
+						// String shopImage = shopElement.select("img").attr("src").trim();
 						String shopUrl = getShopUrl(shopElement.attr("href"));
 						// System.out.println("shopUrl = " + shopUrl);
 						return LowestPriceDto.builder()
+							.pCode(Long.valueOf(pCode))
 							.productName(productName)
 							.productImage(productImage)
 							.price(price)
-							.shopImage(shopImage)
 							.shopName(shopName)
 							.shopUrl(shopUrl).build();
 					}
