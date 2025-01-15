@@ -3,7 +3,7 @@ package com.example.PayAll_DataProvider.service;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,8 +34,15 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	private final ObjectMapper objectMapper;
 	private final RedisTemplate<String, Object> redisTemplate;
-	private final Set<String> shops = Set.of(
-		"쿠팡", "11번가", "G마켓", "SSG.COM", "옥션"
+	// private final Set<String> shops = Set.of(
+	// 	"쿠팡", "11번가", "G마켓", "SSG.COM", "옥션"
+	// );
+	private final Map<String, String> shopNameMapping = Map.of(
+		"쿠팡", "Coupang",
+		"11번가", "11st",
+		"G마켓", "GMarket",
+		"SSG.COM", "SSG",
+		"옥션", "Auction"
 	);
 	public final List<String> pCodes = Arrays.asList(
 		"4060647", "1026291", "16494830", "2085488", "4734659",
@@ -89,7 +96,9 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				Element shopElement = row.select("td.mall div.logo_over a").first();
 				if (shopElement != null) {
 					String shopName = shopElement.select("img").attr("alt").trim();
-					if (shops.contains(shopName)) {
+					if (shopNameMapping.containsKey(shopName)) {
+						String englishShopName = shopNameMapping.getOrDefault(shopName, shopName);
+						System.out.println("englishShopName = " + englishShopName);
 						Long price = Long.parseLong(
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
 						// String shopImage = shopElement.select("img").attr("src").trim();
@@ -100,7 +109,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 							.productName(productName)
 							.productImage(productImage)
 							.price(price)
-							.shopName(shopName)
+							.shopName(englishShopName)
 							.shopUrl(shopUrl).build();
 					}
 				}
@@ -115,6 +124,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	}
 
+	// 상품 페이지로 이동 (셀레니움 사용)
 	private String getShopUrl(String bridgeUrl) {
 		WebDriverManager.chromedriver().setup();
 		ChromeOptions options = new ChromeOptions();
