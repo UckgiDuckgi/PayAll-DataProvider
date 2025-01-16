@@ -1,8 +1,6 @@
 package com.example.PayAll_DataProvider.service;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -105,7 +103,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@Override
 	public List<SearchProductDto> getSearchProducts(String query, int page, int size) {
 		// query 인코딩 처리
-		String url = searchUrl + URLEncoder.encode(query, StandardCharsets.UTF_8);
+		String url = searchUrl + query;
 		List<CompletableFuture<SearchProductDto>> futures = new ArrayList<>();
 
 		try {
