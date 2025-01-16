@@ -179,7 +179,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			Document doc = Jsoup.connect(url).get();
 
 			String productName = doc.select("span.title").text();
-			String productImage = doc.select("div.photo_w img").attr("src");
+			String productImage = "https:" + doc.select("div.photo_w img").attr("src");
 			Elements priceRows = doc.select("table.lwst_tbl tbody tr");
 
 			int count = 0;
