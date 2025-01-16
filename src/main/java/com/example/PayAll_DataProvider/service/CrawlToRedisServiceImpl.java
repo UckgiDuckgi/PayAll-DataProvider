@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.PayAll_DataProvider.dto.LowestPriceDto;
 import com.example.PayAll_DataProvider.dto.SearchProductDto;
+import com.example.PayAll_DataProvider.mapper.SearchProductMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -126,14 +127,15 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				String productId = Objects.requireNonNull(productItem.getAttribute("id")).replaceAll("[^0-9]", "");
 
 				// 각 상품마다 3개의 쇼핑몰 크롤링
-				futures.add(CompletableFuture.supplyAsync(() -> {
+				futures.add(CompletableFuture.supplyAsync(() ->
+					{
 						try {
 							return crawlProductInfo(productId, 3);
 						} catch (IOException e) {
-							throw new RuntimeException(e);
+							return Collections.<LowestPriceDto>emptyList();
 						}
 					})
-					.thenApply(this::convertToSearchProductDto)
+					.thenApply(SearchProductMapper::toDto)
 					.exceptionally(ex -> {
 						log.error("상품 정보 변환 실패: productId={}, error={}", productId, ex.getMessage());
 						return null;
@@ -170,6 +172,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		log.info("상품 데이터 Redis 저장 완료");
 	}
 
+	// 상품 상세 페이지 크롤링
 	private List<LowestPriceDto> crawlProductInfo(String pCode, int shopCount) throws IOException {
 		String url = baseUrl + pCode;
 		List<LowestPriceDto> results = new ArrayList<>();
@@ -218,9 +221,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	}
 
-	// 상품 페이지로 이동 (셀레니움 사용)
+	// 상품 판매 쇼핑몰 페이지로 이동 (셀레니움 사용)
 	private String getShopUrl(String bridgeUrl) {
-
 		try {
 			searchDriver.get(bridgeUrl);
 			Thread.sleep(1000);
@@ -228,25 +230,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Selenium 처리 중 오류", e);
 		}
-	}
-
-	private SearchProductDto convertToSearchProductDto(List<LowestPriceDto> lowestPriceList) {
-		if (lowestPriceList.isEmpty()) {
-			return null;
-		}
-		LowestPriceDto firstDto = lowestPriceList.get(0);
-		List<SearchProductDto.ShopInfoDto> shopInfos = lowestPriceList.stream()
-			.map(p -> SearchProductDto.ShopInfoDto.builder()
-				.shopName(p.getShopName())
-				.shopUrl(p.getShopUrl())
-				.price(p.getPrice()).build())
-			.collect(Collectors.toList());
-		return SearchProductDto.builder()
-			.pCode(firstDto.getPCode())
-			.productName(firstDto.getProductName())
-			.productImage(firstDto.getProductImage())
-			.storeList(shopInfos)
-			.build();
 	}
 
 }
