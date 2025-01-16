@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -49,6 +51,20 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	private WebDriver searchDriver;
 	private WebDriver shopDriver;
 
+	private final Map<String, String> shopNameMapping = Map.of(
+		"쿠팡", "Coupang",
+		"11번가", "11st",
+		"G마켓", "GMarket",
+		"SSG.COM", "SSG",
+		"옥션", "Auction"
+	);
+	public final List<String> pCodes = Arrays.asList(
+		"4060647", "1026291", "16494830", "2085488", "4734659",
+		"1128841", "27756731", "19879892", "7626574", "5361457",
+		"1754500", "3093363", "1109302", "7090609", "9637956",
+		"12673118", "2012426", "16454519", "1992016", "1008149"
+	);
+
 	@PostConstruct
 	public void init() {
 		WebDriverManager.chromedriver().setup();
@@ -73,20 +89,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 	}
 
-	private final Map<String, String> shopNameMapping = Map.of(
-		"쿠팡", "Coupang",
-		"11번가", "11st",
-		"G마켓", "GMarket",
-		"SSG.COM", "SSG",
-		"옥션", "Auction"
-	);
-	public final List<String> pCodes = Arrays.asList(
-		"4060647", "1026291", "16494830", "2085488", "4734659",
-		"1128841", "27756731", "19879892", "7626574", "5361457",
-		"1754500", "3093363", "1109302", "7090609", "9637956",
-		"12673118", "2012426", "16454519", "1992016", "1008149"
-	);
-
 	// Redis에서 상품 정보 조회
 	@Override
 	public LowestPriceDto getProduct(String pCode) throws JsonProcessingException {
@@ -103,14 +105,14 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	public List<SearchProductDto> getSearchProducts(String query, int page, int size) {
 		// query 인코딩 처리
 		String url = searchUrl + URLEncoder.encode(query, StandardCharsets.UTF_8);
-		List<SearchProductDto> searchResults = new ArrayList<>();
+		List<CompletableFuture<SearchProductDto>> futures = new ArrayList<>();
 
 		try {
 			shopDriver.get(url);
 			List<WebElement> productItems = shopDriver.findElements(By.cssSelector("li[id^=productItem]"));
 
 			if (productItems.isEmpty()) {
-				System.out.println("상품 리스트가 없습니다.");
+				log.info("상품 리스트가 없습니다.");
 				return Collections.emptyList();
 			}
 
@@ -120,32 +122,28 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			List<WebElement> paginatedItems = productItems.subList(start, end);
 
 			for (WebElement productItem : paginatedItems) {
-				// productId 추출 후 크롤링으로 3개 쇼핑몰 가져오기
+				// productId 추출
 				String productId = Objects.requireNonNull(productItem.getAttribute("id")).replaceAll("[^0-9]", "");
-				List<LowestPriceDto> lowestPriceList = crawlProductInfo(productId, 3);
 
-				if (!lowestPriceList.isEmpty()) {
-					LowestPriceDto firstDto = lowestPriceList.get(0);
-
-					List<SearchProductDto.ShopInfoDto> shopInfos = lowestPriceList.stream()
-						.map(p -> SearchProductDto.ShopInfoDto.builder()
-							.shopName(p.getShopName())
-							.shopUrl(p.getShopUrl())
-							.price(p.getPrice()).build())
-						.toList();
-
-					SearchProductDto searchProductDto = SearchProductDto.builder()
-						.pCode(firstDto.getPCode())
-						.productName(firstDto.getProductName())
-						.productImage(firstDto.getProductImage())
-						.storeList(shopInfos)
-						.build();
-
-					searchResults.add(searchProductDto);
-				}
-
+				// 각 상품마다 3개의 쇼핑몰 크롤링
+				futures.add(CompletableFuture.supplyAsync(() -> {
+						try {
+							return crawlProductInfo(productId, 3);
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+					})
+					.thenApply(this::convertToSearchProductDto)
+					.exceptionally(ex -> {
+						log.error("상품 정보 변환 실패: productId={}, error={}", productId, ex.getMessage());
+						return null;
+					}));
 			}
-			return searchResults;
+
+			return futures.stream()
+				.map(CompletableFuture::join)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
 
 		} catch (Exception e) {
 			log.error("크롤링 실패: {}", e.getMessage());
@@ -172,7 +170,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		log.info("상품 데이터 Redis 저장 완료");
 	}
 
-	public List<LowestPriceDto> crawlProductInfo(String pCode, int shopCount) throws IOException {
+	private List<LowestPriceDto> crawlProductInfo(String pCode, int shopCount) throws IOException {
 		String url = baseUrl + pCode;
 		List<LowestPriceDto> results = new ArrayList<>();
 
@@ -230,6 +228,25 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Selenium 처리 중 오류", e);
 		}
+	}
+
+	private SearchProductDto convertToSearchProductDto(List<LowestPriceDto> lowestPriceList) {
+		if (lowestPriceList.isEmpty()) {
+			return null;
+		}
+		LowestPriceDto firstDto = lowestPriceList.get(0);
+		List<SearchProductDto.ShopInfoDto> shopInfos = lowestPriceList.stream()
+			.map(p -> SearchProductDto.ShopInfoDto.builder()
+				.shopName(p.getShopName())
+				.shopUrl(p.getShopUrl())
+				.price(p.getPrice()).build())
+			.collect(Collectors.toList());
+		return SearchProductDto.builder()
+			.pCode(firstDto.getPCode())
+			.productName(firstDto.getProductName())
+			.productImage(firstDto.getProductImage())
+			.storeList(shopInfos)
+			.build();
 	}
 
 }
