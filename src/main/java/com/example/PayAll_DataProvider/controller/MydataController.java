@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class MydataController {
 
 	private final MydataService mydataService;
+
 	@GetMapping
 	public ResponseEntity<AccountListResponseDto> getAccountList(
 		@RequestHeader("Authorization") String authorization,
@@ -41,12 +42,13 @@ public class MydataController {
 		Long userId = 1L;
 		// 계좌 목록 조회
 		GetAccountsDto accounts = mydataService.getAccounts(userId, searchTimestamp, nextPage, limit);
+		System.out.println("accounts.getSearchTimestamp() = " + accounts.getSearchTimestamp());
 
 		// AccountResponseDto 빌드
 		AccountListResponseDto response = AccountListResponseDto.builder()
 			.rspCode("0000") // 성공 코드
 			.rspMsg("정상 처리") // 성공 메시지
-			.searchTimestamp(mydataService.getLastSearchTimestamp(userId)) // 최신 검색 타임스탬프
+			.searchTimestamp(accounts.getSearchTimestamp()) // 최신 검색 타임스탬프
 			.accountCnt(accounts.getAccountList().size()) // 계좌 수
 			.accountList(accounts.getAccountList()) // 계좌 목록
 			.build();
@@ -60,7 +62,7 @@ public class MydataController {
 		@RequestHeader("x-api-tran-id") String transactionId,
 		@RequestHeader("x-api-type") String apiType,
 		@RequestBody AccountRequestDto accountRequest
-	){
+	) {
 		AccountResponseDto response = mydataService.getAccountBasicInfo(accountRequest.getAccountNum());
 		return ResponseEntity.ok(response);
 	}

@@ -1,6 +1,8 @@
 package com.example.PayAll_DataProvider.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -8,9 +10,9 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.example.PayAll_DataProvider.dto.AccountBasicInfoDto;
 import com.example.PayAll_DataProvider.dto.AccountDto;
 import com.example.PayAll_DataProvider.dto.AccountResponseDto;
-import com.example.PayAll_DataProvider.dto.AccountBasicInfoDto;
 import com.example.PayAll_DataProvider.dto.AccountTransactionDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
 import com.example.PayAll_DataProvider.dto.TransactionRequestDto;
@@ -37,14 +39,23 @@ public class MydataServiceImpl implements MydataService {
 	@Override
 	// 계좌 목록 조회 로직
 	public GetAccountsDto getAccounts(Long userId, String searchTimestamp, String nextPage, int limit) {
+		System.out.println("searchTimestamp = " + searchTimestamp);
+		System.out.println("lastSearchTimestamp = " + lastSearchTimestamp.get(userId));
+
 		if (nextPage != null) {
 			searchTimestamp = null;
 		}
 
-		if (searchTimestamp == null || searchTimestamp.equals("0")) {
-			searchTimestamp = "0";
-		} else {
-			searchTimestamp = lastSearchTimestamp.getOrDefault(userId, "0");
+		// if (searchTimestamp == null || searchTimestamp.equals("0")) {
+		// 	searchTimestamp = "0";
+		// } else {
+		// 	searchTimestamp = lastSearchTimestamp.getOrDefault(userId, "0");
+		// }
+
+		String currentTimestamp = lastSearchTimestamp.getOrDefault(userId, "0");
+
+		if (searchTimestamp == null) {
+			searchTimestamp = currentTimestamp;
 		}
 
 		// 계좌 목록 조회
@@ -66,11 +77,17 @@ public class MydataServiceImpl implements MydataService {
 			)
 			.toList();
 
+		LocalDateTime now = LocalDateTime.now();
+		String newSearchTimestamp = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+
+		// Map에 최근 조회 시간 저장
+		lastSearchTimestamp.put(userId, newSearchTimestamp);
+
 		// 응답 데이터 구성
 		GetAccountsDto response = GetAccountsDto.builder()
 			.rspCode("0000")
 			.rspMsg("정상 처리")
-			.searchTimestamp(String.valueOf(System.currentTimeMillis()))
+			.searchTimestamp(searchTimestamp)
 			.nextPage(null)
 			.accountCnt(accountDtos.size())
 			.accountList(accountDtos)
