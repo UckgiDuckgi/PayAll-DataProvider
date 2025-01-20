@@ -15,7 +15,10 @@ import com.example.PayAll_DataProvider.dto.AccountResponseDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
 import com.example.PayAll_DataProvider.dto.TransactionRequestDto;
 import com.example.PayAll_DataProvider.dto.TransactionResponseDto;
+import com.example.PayAll_DataProvider.repository.UserRepository;
+import com.example.PayAll_DataProvider.service.JwtService;
 import com.example.PayAll_DataProvider.service.MydataService;
+import com.github.dockerjava.api.exception.UnauthorizedException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 public class MydataController {
 
 	private final MydataService mydataService;
+	private final JwtService jwtService;
+	private final UserRepository userRepository;
 
 	@GetMapping
 	public ResponseEntity<AccountListResponseDto> getAccountList(
@@ -36,13 +41,14 @@ public class MydataController {
 		@RequestParam(required = false) String nextPage,
 		@RequestParam int limit
 	) {
-		// todo Authorization과 기타 헤더 값을 활용해 필요한 로직 추가
 
-		// userId를 1로 가정하여 데이터 조회
-		Long userId = 1L;
+		String authId = jwtService.extractAuthId(authorization.replace("Bearer ", ""));
+		Long userId = userRepository.findByAuthId(authId)
+			.orElseThrow(() -> new UnauthorizedException("유효하지 않은 토큰입니다."))
+			.getId();
+
 		// 계좌 목록 조회
 		GetAccountsDto accounts = mydataService.getAccounts(userId, searchTimestamp, nextPage, limit);
-		System.out.println("accounts.getSearchTimestamp() = " + accounts.getSearchTimestamp());
 
 		// AccountResponseDto 빌드
 		AccountListResponseDto response = AccountListResponseDto.builder()
@@ -63,6 +69,7 @@ public class MydataController {
 		@RequestHeader("x-api-type") String apiType,
 		@RequestBody AccountRequestDto accountRequest
 	) {
+
 		AccountResponseDto response = mydataService.getAccountBasicInfo(accountRequest.getAccountNum());
 		return ResponseEntity.ok(response);
 	}
