@@ -3,9 +3,15 @@ package com.example.PayAll_DataProvider.entity;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,8 +28,8 @@ public class User {
 	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column(nullable = false, unique = true, length = 50)
-	private String email;
+	@Column(name = "auth_id", nullable = false, unique = true, length = 50)
+	private String authId;
 
 	@Column(nullable = false, length = 15)
 	private String phone;
