@@ -1,13 +1,16 @@
 package com.example.PayAll_DataProvider.service;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
+import org.openqa.selenium.NotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.example.PayAll_DataProvider.dto.AccountBasicInfoDto;
@@ -15,14 +18,17 @@ import com.example.PayAll_DataProvider.dto.AccountDto;
 import com.example.PayAll_DataProvider.dto.AccountResponseDto;
 import com.example.PayAll_DataProvider.dto.AccountTransactionDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
+import com.example.PayAll_DataProvider.dto.TransactionCreateDto;
 import com.example.PayAll_DataProvider.dto.TransactionRequestDto;
 import com.example.PayAll_DataProvider.dto.TransactionResponseDto;
 import com.example.PayAll_DataProvider.entity.Account;
 import com.example.PayAll_DataProvider.entity.AccountBasicInfo;
 import com.example.PayAll_DataProvider.entity.AccountTransaction;
+import com.example.PayAll_DataProvider.entity.User;
 import com.example.PayAll_DataProvider.repository.AccountBasicInfoRepository;
 import com.example.PayAll_DataProvider.repository.AccountRepository;
 import com.example.PayAll_DataProvider.repository.AccountTransactionRepository;
+import com.example.PayAll_DataProvider.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +41,7 @@ public class MydataServiceImpl implements MydataService {
 
 	// 최근 조회 시간을 저장하는 Map (Key: UserId, Value: searchTimestamp)
 	private final Map<Long, String> lastSearchTimestamp = new HashMap<>();
+	private final UserRepository userRepository;
 
 	@Override
 	// 계좌 목록 조회 로직
@@ -175,4 +182,49 @@ public class MydataServiceImpl implements MydataService {
 
 		return response;
 	}
+
+	@Override
+	public String setTransaction(Long userId, TransactionCreateDto request) {
+		User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+
+		Account account = accountRepository.findFirstByUserId(userId)
+			.orElseThrow(() -> new NotFoundException("Account not found"));
+
+		AccountBasicInfo accountBasicInfo = accountBasicInfoRepository.findByAccountNum(account.getAccountNum())
+			.orElseThrow(() -> new NotFoundException("Account Info not found"));
+
+		BigDecimal updatedBalance = accountBasicInfo.getAvailBalance().subtract(BigDecimal.valueOf(request.getPrice()));
+
+		// 거래 내역 update
+		AccountTransaction accountTransaction = AccountTransaction.builder()
+			.accountNum(account.getAccountNum())
+			.transType("401")
+			.transTypeDetail("출금")
+			.transDtime(Timestamp.valueOf(LocalDateTime.now()))
+			.transNo(getTransactionNo())
+			.prodName("페이올")
+			.prodCode("ONLINE")
+			.transAmt(BigDecimal.valueOf(request.getPrice()))
+			.settleAmt(BigDecimal.valueOf(request.getPrice()))
+			.balanceAmt(updatedBalance)
+			.currencyCode("KRW")
+			.account(account)
+			.build();
+
+		accountTransactionRepository.save(accountTransaction);
+
+		// 계좌 정보에 잔액 update
+		accountBasicInfo.setAvailBalance(updatedBalance);
+		accountBasicInfoRepository.save(accountBasicInfo);
+
+		return account.getAccountNum();
+	}
+
+	// transNo 생성
+	private String getTransactionNo() {
+		String datePrefix = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+		String sequence = String.format("%04d", new Random().nextInt(10000));
+		return "T" + datePrefix + sequence;
+	}
+
 }
