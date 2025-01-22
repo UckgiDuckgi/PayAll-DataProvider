@@ -13,6 +13,7 @@ import com.example.PayAll_DataProvider.dto.AccountListResponseDto;
 import com.example.PayAll_DataProvider.dto.AccountRequestDto;
 import com.example.PayAll_DataProvider.dto.AccountResponseDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
+import com.example.PayAll_DataProvider.dto.TransactionCreateDto;
 import com.example.PayAll_DataProvider.dto.TransactionRequestDto;
 import com.example.PayAll_DataProvider.dto.TransactionResponseDto;
 import com.example.PayAll_DataProvider.repository.UserRepository;
@@ -84,4 +85,16 @@ public class MydataController {
 		TransactionResponseDto response = mydataService.getMydataTransactions(request);
 		return ResponseEntity.ok(response);
 	}
+
+	@PostMapping("/purchase")
+	public ResponseEntity<String> setTransaction(@RequestHeader("Authorization") String authorization, @RequestBody
+	TransactionCreateDto transactionCreateDto) {
+		String authId = jwtService.extractAuthId(authorization);
+		Long userId = userRepository.findByAuthId(authId)
+			.orElseThrow(() -> new UnauthorizedException("유효하지 않은 토큰입니다."))
+			.getId();
+
+		return ResponseEntity.ok(mydataService.setTransaction(userId, transactionCreateDto));
+	}
+
 }
