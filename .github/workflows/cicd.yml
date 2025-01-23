@@ -1,0 +1,104 @@
+name: CI/CD Pipeline for PayAll-DataProvider
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # 빌드 작업
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 깃허브 리포지토리에서 소스 코드 체크아웃
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # JDK 17 설정
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # Gradle wrapper 실행 권한 부여
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 환경변수 설정 (application.yml 작성)
+      - name: Set application.yml for environment
+        run: |
+          echo "${{ secrets.APPLICATION_YML }}" > src/main/resources/application.yml
+
+      # Gradle 빌드 (테스트 제외)
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
+
+      # 빌드된 아티팩트 업로드
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: PayAll-DataProvider
+          path: build/libs/PayAll-DataProvider-0.0.1-SNAPSHOT.jar
+
+  # 배포 작업
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      # 빌드된 아티팩트 다운로드
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: PayAll-DataProvider
+          path: .
+
+      # 기존 프로세스 종료 및 디렉토리 준비
+      - name: Prepare deployment
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            if [ -f /home/${{ secrets.EC2_USERNAME }}/app.pid ]; then
+              kill $(cat /home/${{ secrets.EC2_USERNAME }}/app.pid) || true
+              rm /home/${{ secrets.EC2_USERNAME }}/app.pid
+            fi
+            mkdir -p /home/${{ secrets.EC2_USERNAME }}/PayAll-DataProvider/build/libs/
+
+      # JAR 파일 전송
+      - name: Copy JAR to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: 'PayAll-DataProvider-0.0.1-SNAPSHOT.jar'
+          target: '/home/${{ secrets.EC2_USERNAME }}/PayAll-DataProvider/build/libs/'
+
+      # 애플리케이션 실행
+      - name: Start Application
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/${{ secrets.EC2_USERNAME }}/PayAll-DataProvider
+
+            # JAR 파일 실행 권한 부여
+            chmod +x build/libs/PayAll-DataProvider-0.0.1-SNAPSHOT.jar
+
+            # 애플리케이션 실행 및 PID 저장
+            nohup java -jar build/libs/PayAll-DataProvider-0.0.1-SNAPSHOT.jar > /home/${{ secrets.EC2_USERNAME }}/app.log 2>&1 & echo $! > /home/${{ secrets.EC2_USERNAME }}/app.pid
+
+            echo "Application started!" >> /home/${{ secrets.EC2_USERNAME }}/app.log
