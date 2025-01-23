@@ -15,6 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -149,6 +150,23 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			log.error("크롤링 실패: {}", e.getMessage());
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public LowestPriceDto crawlingProduct(String pCode) {
+		try {
+			List<LowestPriceDto> lowestPriceDtoList = crawlProductInfo(pCode, 1);
+			if (lowestPriceDtoList != null) {
+				String jsonValue = objectMapper.writeValueAsString(lowestPriceDtoList.get(0));
+				redisTemplate.opsForValue().set(pCode, jsonValue);
+
+				return lowestPriceDtoList.get(0);
+			}
+			throw new NotFoundException("상품 정보를 찾을 수 없습니다.");
+		} catch (Exception e) {
+			throw new RuntimeException("크롤링 실패");
+		}
+
 	}
 
 	@Override

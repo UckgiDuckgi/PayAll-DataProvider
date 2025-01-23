@@ -202,7 +202,7 @@ public class MydataServiceImpl implements MydataService {
 			.transTypeDetail("출금")
 			.transDtime(Timestamp.valueOf(LocalDateTime.now()))
 			.transNo(getTransactionNo())
-			.prodName("페이올")
+			.prodName("PayAll")
 			.prodCode("ONLINE")
 			.transAmt(BigDecimal.valueOf(request.getPrice()))
 			.settleAmt(BigDecimal.valueOf(request.getPrice()))
