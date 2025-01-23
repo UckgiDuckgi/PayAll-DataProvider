@@ -1,5 +1,6 @@
 package com.example.PayAll_DataProvider.service;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.example.PayAll_DataProvider.dto.LowestPriceDto;
@@ -12,4 +13,6 @@ public interface CrawlToRedisService {
 	LowestPriceDto getProduct(String pCode) throws JsonProcessingException;
 
 	List<SearchProductDto> getSearchProducts(String query, int page, int size);
+
+	LowestPriceDto crawlingProduct(String pCode) throws IOException;
 }

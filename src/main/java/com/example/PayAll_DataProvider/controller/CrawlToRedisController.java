@@ -1,5 +1,6 @@
 package com.example.PayAll_DataProvider.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,11 @@ public class CrawlToRedisController {
 		@RequestParam String query) {
 		return ResponseEntity.ok(crawlToRedisService.getSearchProducts(query, page, size));
 
+	}
+
+	@GetMapping("/product")
+	public ResponseEntity<LowestPriceDto> crawlingProduct(@RequestParam String pcode) throws IOException {
+		return ResponseEntity.ok(crawlToRedisService.crawlingProduct(pcode));
 	}
 
 }
