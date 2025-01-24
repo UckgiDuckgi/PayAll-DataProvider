@@ -15,6 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -68,15 +69,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@PostConstruct
 	public void init() {
 		WebDriverManager.chromedriver().setup();
-		ChromeOptions options = new ChromeOptions();
-		options.addArguments("--headless");
-		options.addArguments("--no-sandbox");
-		options.addArguments("--disable-dev-shm-usage");
-		options.addArguments("--disable-gpu");
-		options.addArguments("--disable-extensions");
-		// options.setPageLoadTimeout(Duration.ofSeconds(10));
-		this.searchDriver = new ChromeDriver(options);
-		this.shopDriver = new ChromeDriver(options);
+		this.searchDriver = createNewWebDriver("3195");
+		this.shopDriver = createNewWebDriver("17878");
 	}
 
 	@PreDestroy
@@ -87,6 +81,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		if (shopDriver != null) {
 			shopDriver.quit();
 		}
+	}
+
+	public WebDriver createNewWebDriver(String port) {
+		ChromeOptions options = new ChromeOptions();
+		options.addArguments("--headless");
+		options.addArguments("--no-sandbox");
+		options.addArguments("--disable-dev-shm-usage");
+		options.addArguments("--disable-gpu");
+		options.addArguments("--disable-extensions");
+		options.addArguments("--remote-debugging-port=" + port);
+
+		return new ChromeDriver(options);
 	}
 
 	// Redis에서 상품 정보 조회
@@ -117,6 +123,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 
 		try {
+
 			shopDriver.get(url);
 			List<WebElement> productItems = shopDriver.findElements(By.cssSelector("li[id^=productItem]"));
 
@@ -155,6 +162,10 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
+		} catch (NoSuchSessionException e) {
+			searchDriver = createNewWebDriver("3195");
+			searchDriver.get(url);
+			throw new RuntimeException("세션이 만료되었습니다", e);
 		} catch (Exception e) {
 			log.error("크롤링 실패: {}", e.getMessage());
 			throw new RuntimeException(e);
@@ -211,19 +222,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 			int count = 0;
 			for (Element row : priceRows) {
-				if (count >= shopCount)
-					break;
 
 				Element shopElement = row.select("td.mall div.logo_over a").first();
 				if (shopElement != null) {
 					String shopName = shopElement.select("img").attr("alt").trim();
 					if (shopNameMapping.containsKey(shopName)) {
-						String englishShopName = shopNameMapping.getOrDefault(shopName, shopName);
+						String englishShopName = shopNameMapping.get(shopName);
+						System.out.println("englishShopName = " + englishShopName);
+						count++;
 						Long price = Long.parseLong(
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
 						// String shopImage = shopElement.select("img").attr("src").trim();
 						String shopUrl = getShopUrl(shopElement.attr("href"));
-
 						results.add(LowestPriceDto.builder()
 							.pCode(Long.valueOf(pCode))
 							.productName(productName)
@@ -232,8 +242,14 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 							.shopName(englishShopName)
 							.shopUrl(shopUrl).build());
 
-						count++;
+						// System.out.println("englishShopName = " + englishShopName);
+						// System.out.println("shopUrl = " + shopUrl);
+
+						if (count == shopCount)
+							break;
+
 					}
+
 				}
 
 			}
@@ -252,7 +268,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			searchDriver.get(bridgeUrl);
 			Thread.sleep(1000);
 			return searchDriver.getCurrentUrl();
+		} catch (NoSuchSessionException e) {
+			searchDriver = createNewWebDriver("3195");
+			searchDriver.get(bridgeUrl);
+			try {
+				searchDriver.get(bridgeUrl);
+				Thread.sleep(1000);
+				return searchDriver.getCurrentUrl();
+			} catch (Exception ex) {
+				throw new RuntimeException("세션이 만료되었습니다", ex);
+			}
 		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 			throw new RuntimeException("Selenium 처리 중 오류", e);
 		}
 	}
