@@ -114,6 +114,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	@Override
 	public List<SearchProductDto> getSearchProducts(String query, int page, int size) {
+		redisTemplate.opsForValue().set("tttt", "ssss");
+
 		// query 인코딩 처리
 		String url = searchUrl + query;
 		List<CompletableFuture<SearchProductDto>> futures = new ArrayList<>();
@@ -199,6 +201,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@Override
 	// @Scheduled(cron = "0 0 9 * * *")
 	public void saveProductToRedis() {
+		redisTemplate.opsForValue().set("qqqq", "ssss");
 		for (String pCode : pCodes) {
 			try {
 				List<LowestPriceDto> lowestPriceDtoList = crawlProductInfo(pCode, 1);
