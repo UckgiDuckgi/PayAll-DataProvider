@@ -107,6 +107,15 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		String url = searchUrl + query;
 		List<CompletableFuture<SearchProductDto>> futures = new ArrayList<>();
 
+		System.out.println("query = " + query);
+		if (query.equals("%EB%AC%B8%EA%B7%9C%EB%B9%88") || query.equals("문규빈")) {
+			SearchProductDto searchProductDto = SearchProductDto.builder()
+				.pCode(11L)
+				.productName("문규빈")
+				.productImage("ssss").build();
+			return List.of(searchProductDto);
+		}
+
 		try {
 			shopDriver.get(url);
 			List<WebElement> productItems = shopDriver.findElements(By.cssSelector("li[id^=productItem]"));

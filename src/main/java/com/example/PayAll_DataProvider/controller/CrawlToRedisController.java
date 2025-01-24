@@ -38,6 +38,7 @@ public class CrawlToRedisController {
 	@GetMapping("/search")
 	public ResponseEntity<List<SearchProductDto>> searchProducts(@RequestParam int page, @RequestParam int size,
 		@RequestParam String query) {
+		
 		return ResponseEntity.ok(crawlToRedisService.getSearchProducts(query, page, size));
 
 	}
