@@ -243,7 +243,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 						Long price = Long.parseLong(
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
 						// String shopImage = shopElement.select("img").attr("src").trim();
-						String shopUrl = getShopUrl(shopElement.attr("href"));
+						// String shopUrl = getShopUrl(shopElement.attr("href"));
+						String shopUrl = "xxxxxxx";
 						results.add(LowestPriceDto.builder()
 							.pCode(Long.valueOf(pCode))
 							.productName(productName)
