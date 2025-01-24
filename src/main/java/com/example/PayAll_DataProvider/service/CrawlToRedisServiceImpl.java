@@ -180,6 +180,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	@Override
 	public LowestPriceDto crawlingProduct(String pCode) {
+		redisTemplate.opsForValue().set("kkkk", "ssss");
 		try {
 			List<LowestPriceDto> lowestPriceDtoList = crawlProductInfo(pCode, 1);
 			if (lowestPriceDtoList != null) {
