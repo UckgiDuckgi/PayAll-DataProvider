@@ -15,6 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -68,15 +69,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@PostConstruct
 	public void init() {
 		WebDriverManager.chromedriver().setup();
-		ChromeOptions options = new ChromeOptions();
-		options.addArguments("--headless");
-		options.addArguments("--no-sandbox");
-		options.addArguments("--disable-dev-shm-usage");
-		options.addArguments("--disable-gpu");
-		options.addArguments("--disable-extensions");
-		// options.setPageLoadTimeout(Duration.ofSeconds(10));
-		this.searchDriver = new ChromeDriver(options);
-		this.shopDriver = new ChromeDriver(options);
+		this.searchDriver = createNewWebDriver();
+		this.shopDriver = createNewWebDriver();
 	}
 
 	@PreDestroy
@@ -87,6 +81,16 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		if (shopDriver != null) {
 			shopDriver.quit();
 		}
+	}
+
+	public WebDriver createNewWebDriver() {
+		ChromeOptions options = new ChromeOptions();
+		options.addArguments("--headless");
+		options.addArguments("--no-sandbox");
+		options.addArguments("--disable-dev-shm-usage");
+		options.addArguments("--disable-gpu");
+		options.addArguments("--disable-extensions");
+		return new ChromeDriver(options);
 	}
 
 	// Redis에서 상품 정보 조회
@@ -117,6 +121,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 
 		try {
+
 			shopDriver.get(url);
 			List<WebElement> productItems = shopDriver.findElements(By.cssSelector("li[id^=productItem]"));
 
@@ -155,6 +160,10 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
+		} catch (NoSuchSessionException e) {
+			searchDriver = createNewWebDriver();
+			searchDriver.get(url);
+			throw new RuntimeException("세션이 만료되었습니다", e);
 		} catch (Exception e) {
 			log.error("크롤링 실패: {}", e.getMessage());
 			throw new RuntimeException(e);
@@ -252,7 +261,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			searchDriver.get(bridgeUrl);
 			Thread.sleep(1000);
 			return searchDriver.getCurrentUrl();
+		} catch (NoSuchSessionException e) {
+			searchDriver = createNewWebDriver();
+			searchDriver.get(bridgeUrl);
+			try {
+				searchDriver.get(bridgeUrl);
+				Thread.sleep(1000);
+				return searchDriver.getCurrentUrl();
+			} catch (Exception ex) {
+				throw new RuntimeException("세션이 만료되었습니다", ex);
+			}
 		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 			throw new RuntimeException("Selenium 처리 중 오류", e);
 		}
 	}
