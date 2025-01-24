@@ -20,7 +20,6 @@ import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -69,7 +68,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	@PostConstruct
 	public void init() {
-		WebDriverManager.chromedriver().driverVersion("132.0.6834.110").setup();
+		// WebDriverManager.chromedriver().driverVersion("132.0.6834.110").setup();
+		WebDriverManager.chromedriver().setup();
 		this.searchDriver = createNewWebDriver(3195);
 		this.shopDriver = createNewWebDriver(17878);
 	}
@@ -86,18 +86,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	public WebDriver createNewWebDriver(int port) {
 		ChromeOptions options = new ChromeOptions();
-		ChromeDriverService service = new ChromeDriverService.Builder()
-			.usingPort(port)
-			.build();
+		// ChromeDriverService service = new ChromeDriverService.Builder()
+		// 	.usingPort(port)
+		// 	.build();
 
 		options.addArguments("--headless");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
-		// options.addArguments("--remote-debugging-port=" + port);
+		options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(service, options);
+		return new ChromeDriver(options);
 	}
 
 	// Redis에서 상품 정보 조회
