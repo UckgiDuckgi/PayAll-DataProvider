@@ -69,8 +69,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@PostConstruct
 	public void init() {
 		WebDriverManager.chromedriver().setup();
-		this.searchDriver = createNewWebDriver();
-		this.shopDriver = createNewWebDriver();
+		this.searchDriver = createNewWebDriver("3195");
+		this.shopDriver = createNewWebDriver("17878");
 	}
 
 	@PreDestroy
@@ -83,13 +83,15 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 	}
 
-	public WebDriver createNewWebDriver() {
+	public WebDriver createNewWebDriver(String port) {
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
+		options.addArguments("--remote-debugging-port=" + port);
+
 		return new ChromeDriver(options);
 	}
 
@@ -161,7 +163,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				.collect(Collectors.toList());
 
 		} catch (NoSuchSessionException e) {
-			searchDriver = createNewWebDriver();
+			searchDriver = createNewWebDriver("3195");
 			searchDriver.get(url);
 			throw new RuntimeException("세션이 만료되었습니다", e);
 		} catch (Exception e) {
@@ -220,19 +222,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 			int count = 0;
 			for (Element row : priceRows) {
-				if (count >= shopCount)
-					break;
 
 				Element shopElement = row.select("td.mall div.logo_over a").first();
 				if (shopElement != null) {
 					String shopName = shopElement.select("img").attr("alt").trim();
 					if (shopNameMapping.containsKey(shopName)) {
-						String englishShopName = shopNameMapping.getOrDefault(shopName, shopName);
+						String englishShopName = shopNameMapping.get(shopName);
+						System.out.println("englishShopName = " + englishShopName);
+						count++;
 						Long price = Long.parseLong(
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
 						// String shopImage = shopElement.select("img").attr("src").trim();
 						String shopUrl = getShopUrl(shopElement.attr("href"));
-
 						results.add(LowestPriceDto.builder()
 							.pCode(Long.valueOf(pCode))
 							.productName(productName)
@@ -241,8 +242,14 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 							.shopName(englishShopName)
 							.shopUrl(shopUrl).build());
 
-						count++;
+						// System.out.println("englishShopName = " + englishShopName);
+						// System.out.println("shopUrl = " + shopUrl);
+
+						if (count == shopCount)
+							break;
+
 					}
+
 				}
 
 			}
@@ -262,7 +269,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			Thread.sleep(1000);
 			return searchDriver.getCurrentUrl();
 		} catch (NoSuchSessionException e) {
-			searchDriver = createNewWebDriver();
+			searchDriver = createNewWebDriver("3195");
 			searchDriver.get(bridgeUrl);
 			try {
 				searchDriver.get(bridgeUrl);
