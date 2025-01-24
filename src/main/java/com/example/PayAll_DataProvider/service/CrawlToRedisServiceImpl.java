@@ -20,6 +20,7 @@ import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -69,8 +70,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@PostConstruct
 	public void init() {
 		WebDriverManager.chromedriver().setup();
-		this.searchDriver = createNewWebDriver("3195");
-		this.shopDriver = createNewWebDriver("17878");
+		this.searchDriver = createNewWebDriver(3195);
+		this.shopDriver = createNewWebDriver(17878);
 	}
 
 	@PreDestroy
@@ -83,16 +84,20 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 	}
 
-	public WebDriver createNewWebDriver(String port) {
+	public WebDriver createNewWebDriver(int port) {
 		ChromeOptions options = new ChromeOptions();
+		ChromeDriverService service = new ChromeDriverService.Builder()
+			.usingPort(port)
+			.build();
+
 		options.addArguments("--headless");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
-		options.addArguments("--remote-debugging-port=" + port);
+		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(options);
+		return new ChromeDriver(service, options);
 	}
 
 	// Redis에서 상품 정보 조회
@@ -125,6 +130,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		try {
 
 			shopDriver.get(url);
+			log.debug("!!url" + url);
 			List<WebElement> productItems = shopDriver.findElements(By.cssSelector("li[id^=productItem]"));
 
 			if (productItems.isEmpty()) {
@@ -163,7 +169,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				.collect(Collectors.toList());
 
 		} catch (NoSuchSessionException e) {
-			searchDriver = createNewWebDriver("3195");
+			searchDriver = createNewWebDriver(3195);
 			searchDriver.get(url);
 			throw new RuntimeException("세션이 만료되었습니다", e);
 		} catch (Exception e) {
@@ -269,7 +275,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			Thread.sleep(1000);
 			return searchDriver.getCurrentUrl();
 		} catch (NoSuchSessionException e) {
-			searchDriver = createNewWebDriver("3195");
+			searchDriver = createNewWebDriver(3195);
 			searchDriver.get(bridgeUrl);
 			try {
 				searchDriver.get(bridgeUrl);
