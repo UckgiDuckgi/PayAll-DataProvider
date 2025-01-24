@@ -28,13 +28,8 @@ import com.example.PayAll_DataProvider.dto.SearchProductDto;
 import com.example.PayAll_DataProvider.mapper.SearchProductMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.ElementHandle;
-import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.options.LoadState;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -55,10 +50,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	private WebDriver searchDriver;
 	// private WebDriver shopDriver;
 
-	private Playwright playwright;
-	private Browser browser;
-	private Page page;
-
 	private final Map<String, String> shopNameMapping = Map.of(
 		"쿠팡", "Coupang",
 		"11번가", "11st",
@@ -76,33 +67,19 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@PostConstruct
 	public void init() {
 		// WebDriverManager.chromedriver().driverVersion("132.0.6834.110").setup();
-		// WebDriverManager.chromedriver().setup();
-		// this.searchDriver = createNewWebDriver(3195);
+		WebDriverManager.chromedriver().setup();
+		this.searchDriver = createNewWebDriver(3195);
 		// this.shopDriver = createNewWebDriver(17878);
-		playwright = Playwright.create();
-		browser = playwright.chromium().launch(new BrowserType.LaunchOptions()
-			.setHeadless(true)
-			.setArgs(Arrays.asList("--no-sandbox", "--disable-dev-shm-usage")));
-		page = browser.newPage();
 	}
 
 	@PreDestroy
 	public void cleanup() {
-		// if (searchDriver != null) {
-		// 	searchDriver.quit();
-		// }
+		if (searchDriver != null) {
+			searchDriver.quit();
+		}
 		// if (shopDriver != null) {
 		// 	shopDriver.quit();
 		// }
-		if (page != null) {
-			page.close();
-		}
-		if (browser != null) {
-			browser.close();
-		}
-		if (playwright != null) {
-			playwright.close();
-		}
 	}
 
 	public WebDriver createNewWebDriver(int port) {
@@ -134,7 +111,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	@Override
-	public List<SearchProductDto> getSearchProducts(String query, int pageNum, int size) {
+	public List<SearchProductDto> getSearchProducts(String query, int page, int size) {
 		redisTemplate.opsForValue().set("tttt", "ssss");
 
 		// query 인코딩 처리
@@ -152,67 +129,47 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 		try {
 
-			page.navigate(url);
+			searchDriver.get(url);
+			log.info("!!url{}", url);
 
-			page.waitForLoadState(LoadState.NETWORKIDLE);
+			String pageSource = searchDriver.getPageSource();
+			Document doc = Jsoup.parse(pageSource);
+			System.out.println("doc = " + doc);
 
-			ElementHandle[] productItems = page.querySelectorAll("li[id^=productItem]").toArray(new ElementHandle[0]);
-
-			// searchDriver.get(url);
-			// log.info("!!url{}", url);
-			//
 			// Document doc = Jsoup.connect(url).get();
-			//
-			// Thread.sleep(60000);
-			//
-			// Elements productItems = doc.select("ul.product_list li.prod_item");
+
+			// Thread.sleep(30000);
+
+			Elements productItems = doc.select("ul.product_list li.prod_item");
 
 			// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(20));
 
 			// List<WebElement> productItems = wait.until(
 			// ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector("li[id^=productItem]")));
 
-			// WebElement productList = searchDriver.findElement(By.className("product_list"));
-			// List<WebElement> productItems = productList.findElements(By.cssSelector("li.prod_name"));
-
-			if (productItems.length == 0) {
+			// List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
+			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
 				return Collections.emptyList();
 			}
 
 			// pagination
-			// int start = (pageNum - 1) * size;
-			// int end = Math.min(start + size, productItems.size());
-			// List<Element> paginatedItems = productItems.subList(start, end);
-			//
-			// for (Element productItem : paginatedItems) {
-			// 	// productId 추출
-			// 	String productId = Objects.requireNonNull(productItem.attr("id")).replaceAll("[^0-9]", "");
-			// 	System.out.println("productId = " + productId);
-			// 	// 각 상품마다 3개의 쇼핑몰 크롤링
-			// 	futures.add(CompletableFuture.supplyAsync(() ->
-			// 		{
-			// 			try {
-			// 				return crawlProductInfo(productId, 3);
-			// 			} catch (IOException e) {
-			// 				return Collections.<LowestPriceDto>emptyList();
-			// 			}
-			// 		})
+			int start = (page - 1) * size;
+			int end = Math.min(start + size, productItems.size());
+			List<Element> paginatedItems = productItems.subList(start, end);
 
-			int start = (pageNum - 1) * size;
-			int end = Math.min(start + size, productItems.length);
-
-			for (int i = start; i < end; i++) {
-				String productId = productItems[i].getAttribute("id").replaceAll("[^0-9]", "");
-
-				futures.add(CompletableFuture.supplyAsync(() -> {
+			for (Element productItem : paginatedItems) {
+				// productId 추출
+				String productId = Objects.requireNonNull(productItem.attr("id")).replaceAll("[^0-9]", "");
+				// 각 상품마다 3개의 쇼핑몰 크롤링
+				futures.add(CompletableFuture.supplyAsync(() ->
+					{
 						try {
 							return crawlProductInfo(productId, 3);
 						} catch (IOException e) {
 							return Collections.<LowestPriceDto>emptyList();
 						}
 					})
-
 					.thenApply(SearchProductMapper::toDto)
 					.exceptionally(ex -> {
 						log.error("상품 정보 변환 실패: productId={}, error={}", productId, ex.getMessage());
@@ -226,24 +183,12 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				.collect(Collectors.toList());
 
 		} catch (NoSuchSessionException e) {
-			// searchDriver = createNewWebDriver(3195);
-			// searchDriver.get(url);
-			recreatePage();
+			searchDriver = createNewWebDriver(3195);
+			searchDriver.get(url);
 			throw new RuntimeException("세션이 만료되었습니다", e);
 		} catch (Exception e) {
 			log.error("크롤링 실패: {}", e.getMessage());
 			throw new RuntimeException(e);
-		}
-	}
-
-	private void recreatePage() {
-		try {
-			if (page != null) {
-				page.close();
-			}
-			page = browser.newPage();
-		} catch (Exception e) {
-			log.error("페이지 재생성 실패", e);
 		}
 	}
 
@@ -311,7 +256,10 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
 						// String shopImage = shopElement.select("img").attr("src").trim();
 						// String shopUrl = getShopUrl(shopElement.attr("href"));
-						String shopUrl = "xxxxxxx";
+
+						String shopUrl = row.select("td.price a").attr("href");
+						System.out.println("shopUrl = " + shopElement.attr("href"));
+						// String shopUrl = "xxxxxxx";
 						results.add(LowestPriceDto.builder()
 							.pCode(Long.valueOf(pCode))
 							.productName(productName)
@@ -341,25 +289,39 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	// 상품 판매 쇼핑몰 페이지로 이동 (셀레니움 사용)
-	private String getShopUrl(String bridgeUrl) {
-		try {
-			searchDriver.get(bridgeUrl);
-			Thread.sleep(1000);
-			return searchDriver.getCurrentUrl();
-		} catch (NoSuchSessionException e) {
-			searchDriver = createNewWebDriver(3195);
-			searchDriver.get(bridgeUrl);
-			try {
-				searchDriver.get(bridgeUrl);
-				Thread.sleep(1000);
-				return searchDriver.getCurrentUrl();
-			} catch (Exception ex) {
-				throw new RuntimeException("세션이 만료되었습니다", ex);
-			}
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new RuntimeException("Selenium 처리 중 오류", e);
-		}
-	}
+	// 상품 페이지로 이동 (셀레니움 사용)
+	// private String getShopUrl(String bridgeUrl) {
+	//
+	// 	try {
+	// 		searchDriver.get(bridgeUrl);
+	//
+	// 		WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+	// 		wait.until(ExpectedConditions.urlToBe(bridgeUrl));
+	// 		return searchDriver.getCurrentUrl();
+	//
+	// 	} catch (RuntimeException e) {
+	// 		throw new RuntimeException("Selenium 처리 중 오류", e);
+	// 	}
+	// }
+	// private String getShopUrl(String bridgeUrl) {
+	// 	try {
+	// 		searchDriver.get(bridgeUrl);
+	// 		Thread.sleep(1000);
+	// 		return searchDriver.getCurrentUrl();
+	// 	} catch (NoSuchSessionException e) {
+	// 		searchDriver = createNewWebDriver(3195);
+	// 		searchDriver.get(bridgeUrl);
+	// 		try {
+	// 			searchDriver.get(bridgeUrl);
+	// 			Thread.sleep(1000);
+	// 			return searchDriver.getCurrentUrl();
+	// 		} catch (Exception ex) {
+	// 			throw new RuntimeException("세션이 만료되었습니다", ex);
+	// 		}
+	// 	} catch (InterruptedException e) {
+	// 		Thread.currentThread().interrupt();
+	// 		throw new RuntimeException("Selenium 처리 중 오류", e);
+	// 	}
+	// }
 
 }
