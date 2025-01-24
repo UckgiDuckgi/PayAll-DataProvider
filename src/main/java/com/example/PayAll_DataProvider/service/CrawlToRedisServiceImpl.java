@@ -50,7 +50,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	private final ObjectMapper objectMapper;
 	private final RedisTemplate<String, Object> redisTemplate;
 	private WebDriver searchDriver;
-	private WebDriver shopDriver;
+	// private WebDriver shopDriver;
 
 	private final Map<String, String> shopNameMapping = Map.of(
 		"쿠팡", "Coupang",
@@ -71,7 +71,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		// WebDriverManager.chromedriver().driverVersion("132.0.6834.110").setup();
 		WebDriverManager.chromedriver().setup();
 		this.searchDriver = createNewWebDriver(3195);
-		this.shopDriver = createNewWebDriver(17878);
+		// this.shopDriver = createNewWebDriver(17878);
 	}
 
 	@PreDestroy
@@ -79,9 +79,9 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		if (searchDriver != null) {
 			searchDriver.quit();
 		}
-		if (shopDriver != null) {
-			shopDriver.quit();
-		}
+		// if (shopDriver != null) {
+		// 	shopDriver.quit();
+		// }
 	}
 
 	public WebDriver createNewWebDriver(int port) {
@@ -131,9 +131,9 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 		try {
 
-			shopDriver.get(url);
+			searchDriver.get(url);
 			log.debug("!!url" + url);
-			List<WebElement> productItems = shopDriver.findElements(By.cssSelector("li[id^=productItem]"));
+			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 
 			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
