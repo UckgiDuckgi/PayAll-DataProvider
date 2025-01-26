@@ -1,5 +1,6 @@
 package com.example.PayAll_DataProvider.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,13 +15,17 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.PayAll_DataProvider.dto.LowestPriceDto;
@@ -48,6 +53,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	private final ObjectMapper objectMapper;
 	private final RedisTemplate<String, Object> redisTemplate;
 	private WebDriver searchDriver;
+
 	// private WebDriver shopDriver;
 
 	private final Map<String, String> shopNameMapping = Map.of(
@@ -68,7 +74,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	public void init() {
 		// WebDriverManager.chromedriver().driverVersion("132.0.6834.110").setup();
 		WebDriverManager.chromedriver().setup();
-		this.searchDriver = createNewWebDriver(3195);
+		this.searchDriver = createNewWebDriver();
 		// this.shopDriver = createNewWebDriver(17878);
 	}
 
@@ -82,20 +88,22 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		// }
 	}
 
-	public WebDriver createNewWebDriver(int port) {
-		ChromeOptions options = new ChromeOptions();
-		// ChromeDriverService service = new ChromeDriverService.Builder()
-		// 	.usingPort(port)
-		// 	.build();
+	public WebDriver createNewWebDriver() {
+		File chromeDriverFile = new File("///");
+		ChromeDriverService service = new ChromeDriverService.Builder()
+			.usingDriverExecutable(chromeDriverFile)
+			.usingAnyFreePort()
+			.build();
 
+		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
-		options.addArguments("--remote-debugging-port=" + port);
+		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(options);
+		return new ChromeDriver(service, options);
 	}
 
 	// Redis에서 상품 정보 조회
@@ -132,22 +140,15 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			searchDriver.get(url);
 			log.info("!!url{}", url);
 
-			String pageSource = searchDriver.getPageSource();
-			Document doc = Jsoup.parse(pageSource);
-			System.out.println("doc = " + doc);
-
 			// Document doc = Jsoup.connect(url).get();
-
-			// Thread.sleep(30000);
-
-			Elements productItems = doc.select("ul.product_list li.prod_item");
+			// Elements productItems = doc.select("ul.product_list li.prod_item");
 
 			// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(20));
 
 			// List<WebElement> productItems = wait.until(
 			// ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector("li[id^=productItem]")));
 
-			// List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
+			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
 				return Collections.emptyList();
@@ -156,11 +157,11 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			// pagination
 			int start = (page - 1) * size;
 			int end = Math.min(start + size, productItems.size());
-			List<Element> paginatedItems = productItems.subList(start, end);
+			List<WebElement> paginatedItems = productItems.subList(start, end);
 
-			for (Element productItem : paginatedItems) {
+			for (WebElement productItem : paginatedItems) {
 				// productId 추출
-				String productId = Objects.requireNonNull(productItem.attr("id")).replaceAll("[^0-9]", "");
+				String productId = Objects.requireNonNull(productItem.getAttribute("id")).replaceAll("[^0-9]", "");
 				// 각 상품마다 3개의 쇼핑몰 크롤링
 				futures.add(CompletableFuture.supplyAsync(() ->
 					{
@@ -183,7 +184,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 				.collect(Collectors.toList());
 
 		} catch (NoSuchSessionException e) {
-			searchDriver = createNewWebDriver(3195);
+			searchDriver = createNewWebDriver();
 			searchDriver.get(url);
 			throw new RuntimeException("세션이 만료되었습니다", e);
 		} catch (Exception e) {
@@ -211,7 +212,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	@Override
-	// @Scheduled(cron = "0 0 9 * * *")
+	@Scheduled(cron = "0 0 9 * * *")
 	public void saveProductToRedis() {
 		redisTemplate.opsForValue().set("qqqq", "ssss");
 		for (String pCode : pCodes) {
