@@ -89,7 +89,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	public WebDriver createNewWebDriver() {
-		File chromeDriverFile = new File("///");
+		File chromeDriverFile = new File("/usr/bin/chromedriver");
 		ChromeDriverService service = new ChromeDriverService.Builder()
 			.usingDriverExecutable(chromeDriverFile)
 			.usingAnyFreePort()
@@ -259,7 +259,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 						// String shopUrl = getShopUrl(shopElement.attr("href"));
 
 						String shopUrl = row.select("td.price a").attr("href");
-						System.out.println("shopUrl = " + shopElement.attr("href"));
 						// String shopUrl = "xxxxxxx";
 						results.add(LowestPriceDto.builder()
 							.pCode(Long.valueOf(pCode))
