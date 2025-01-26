@@ -1,6 +1,5 @@
 package com.example.PayAll_DataProvider.service;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +20,6 @@ import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -89,11 +87,11 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	public WebDriver createNewWebDriver() {
-		File chromeDriverFile = new File("/usr/bin/chromedriver");
-		ChromeDriverService service = new ChromeDriverService.Builder()
-			.usingDriverExecutable(chromeDriverFile)
-			.usingAnyFreePort()
-			.build();
+		// File chromeDriverFile = new File("/usr/bin/chromedriver");
+		// ChromeDriverService service = new ChromeDriverService.Builder()
+		// 	.usingDriverExecutable(chromeDriverFile)
+		// 	.usingAnyFreePort()
+		// 	.build();
 
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless");
@@ -103,7 +101,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-extensions");
 		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(service, options);
+		return new ChromeDriver(options);
 	}
 
 	// Redis에서 상품 정보 조회
