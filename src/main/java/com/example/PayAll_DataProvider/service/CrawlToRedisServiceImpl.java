@@ -4,10 +4,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
@@ -118,7 +122,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	@Override
 	public List<SearchProductDto> getSearchProducts(String query, int page, int size) {
-		redisTemplate.opsForValue().set("tttt", "ssss");
 
 		// query 인코딩 처리
 		String url = searchUrl + query;
@@ -193,7 +196,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	@Override
 	public LowestPriceDto crawlingProduct(String pCode) {
-		redisTemplate.opsForValue().set("kkkk", "ssss");
 		try {
 			List<LowestPriceDto> lowestPriceDtoList = crawlProductInfo(pCode, 1);
 			if (lowestPriceDtoList != null) {
@@ -212,8 +214,12 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	@Override
 	@Scheduled(cron = "0 0 9 * * *")
 	public void saveProductToRedis() {
-		redisTemplate.opsForValue().set("qqqq", "ssss");
-		for (String pCode : pCodes) {
+
+		Set<String> pcodes = new HashSet<>(pCodes);
+		pcodes.addAll(Objects.requireNonNull(redisTemplate.keys("*")));
+		System.out.println("pcodes.size() = " + pcodes.size());
+
+		for (String pCode : pcodes) {
 			try {
 				List<LowestPriceDto> lowestPriceDtoList = crawlProductInfo(pCode, 1);
 				if (lowestPriceDtoList != null) {
@@ -249,15 +255,20 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 					String shopName = shopElement.select("img").attr("alt").trim();
 					if (shopNameMapping.containsKey(shopName)) {
 						String englishShopName = shopNameMapping.get(shopName);
-						System.out.println("englishShopName = " + englishShopName);
-						count++;
 						Long price = Long.parseLong(
 							row.select("td.price a span.txt_prc em").text().replaceAll("[^0-9]", ""));
-						// String shopImage = shopElement.select("img").attr("src").trim();
-						// String shopUrl = getShopUrl(shopElement.attr("href"));
 
-						String shopUrl = row.select("td.price a").attr("href");
-						// String shopUrl = "xxxxxxx";
+						// shopUrl 크롤링
+						String shopUrl = "";
+						String loadingUrl = row.select("td.price a").attr("href");  // 중간페이지 url
+						Element script = Jsoup.connect(loadingUrl).get().select("script").get(1); // script 태그 중 2번째
+
+						Pattern pattern = Pattern.compile("goLink\\(\"(.*?)\"\\)");
+						Matcher matcher = pattern.matcher(script.html());
+						if (matcher.find()) {
+							shopUrl = matcher.group(1);
+						}
+
 						results.add(LowestPriceDto.builder()
 							.pCode(Long.valueOf(pCode))
 							.productName(productName)
@@ -266,9 +277,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 							.shopName(englishShopName)
 							.shopUrl(shopUrl).build());
 
-						// System.out.println("englishShopName = " + englishShopName);
-						// System.out.println("shopUrl = " + shopUrl);
-
+						count++;
 						if (count == shopCount)
 							break;
 
@@ -285,41 +294,5 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 
 	}
-
-	// 상품 판매 쇼핑몰 페이지로 이동 (셀레니움 사용)
-	// 상품 페이지로 이동 (셀레니움 사용)
-	// private String getShopUrl(String bridgeUrl) {
-	//
-	// 	try {
-	// 		searchDriver.get(bridgeUrl);
-	//
-	// 		WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
-	// 		wait.until(ExpectedConditions.urlToBe(bridgeUrl));
-	// 		return searchDriver.getCurrentUrl();
-	//
-	// 	} catch (RuntimeException e) {
-	// 		throw new RuntimeException("Selenium 처리 중 오류", e);
-	// 	}
-	// }
-	// private String getShopUrl(String bridgeUrl) {
-	// 	try {
-	// 		searchDriver.get(bridgeUrl);
-	// 		Thread.sleep(1000);
-	// 		return searchDriver.getCurrentUrl();
-	// 	} catch (NoSuchSessionException e) {
-	// 		searchDriver = createNewWebDriver(3195);
-	// 		searchDriver.get(bridgeUrl);
-	// 		try {
-	// 			searchDriver.get(bridgeUrl);
-	// 			Thread.sleep(1000);
-	// 			return searchDriver.getCurrentUrl();
-	// 		} catch (Exception ex) {
-	// 			throw new RuntimeException("세션이 만료되었습니다", ex);
-	// 		}
-	// 	} catch (InterruptedException e) {
-	// 		Thread.currentThread().interrupt();
-	// 		throw new RuntimeException("Selenium 처리 중 오류", e);
-	// 	}
-	// }
 
 }
