@@ -40,7 +40,7 @@ jobs:
 
       # 빌드된 아티팩트 업로드
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: PayAll-DataProvider
           path: build/libs/PayAll-DataProvider-0.0.1-SNAPSHOT.jar
@@ -53,7 +53,7 @@ jobs:
     steps:
       # 빌드된 아티팩트 다운로드
       - name: Download build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: PayAll-DataProvider
           path: .
