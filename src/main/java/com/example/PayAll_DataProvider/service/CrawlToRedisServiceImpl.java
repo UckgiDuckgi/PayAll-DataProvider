@@ -2,7 +2,6 @@ package com.example.PayAll_DataProvider.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,8 +27,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -138,12 +135,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 			searchDriver.get(url);
 
-			WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
-
-			List<WebElement> productItems = wait.until(
-				ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector("li[id^=productItem]")));
-
-			// List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
+			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
 				return Collections.emptyList();
