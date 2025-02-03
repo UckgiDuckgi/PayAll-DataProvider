@@ -6,5 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class TransactionCreateDto {
+	private String shopName;
 	private Long price;
 }

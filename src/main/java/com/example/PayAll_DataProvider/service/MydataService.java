@@ -1,5 +1,7 @@
 package com.example.PayAll_DataProvider.service;
 
+import java.util.List;
+
 import com.example.PayAll_DataProvider.dto.AccountResponseDto;
 import com.example.PayAll_DataProvider.dto.GetAccountsDto;
 import com.example.PayAll_DataProvider.dto.TransactionCreateDto;
@@ -15,5 +17,5 @@ public interface MydataService {
 
 	TransactionResponseDto getMydataTransactions(TransactionRequestDto request);
 
-	String setTransaction(Long userId, TransactionCreateDto request);
+	String setTransaction(Long userId, List<TransactionCreateDto> requestList);
 }
