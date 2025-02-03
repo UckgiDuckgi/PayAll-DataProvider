@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -184,7 +185,7 @@ public class MydataServiceImpl implements MydataService {
 	}
 
 	@Override
-	public String setTransaction(Long userId, TransactionCreateDto request) {
+	public String setTransaction(Long userId, List<TransactionCreateDto> requestList) {
 		User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
 
 		Account account = accountRepository.findFirstByUserId(userId)
@@ -193,25 +194,32 @@ public class MydataServiceImpl implements MydataService {
 		AccountBasicInfo accountBasicInfo = accountBasicInfoRepository.findByAccountNum(account.getAccountNum())
 			.orElseThrow(() -> new NotFoundException("Account Info not found"));
 
-		BigDecimal updatedBalance = accountBasicInfo.getAvailBalance().subtract(BigDecimal.valueOf(request.getPrice()));
+		BigDecimal updatedBalance = accountBasicInfo.getAvailBalance();
 
-		// 거래 내역 update
-		AccountTransaction accountTransaction = AccountTransaction.builder()
-			.accountNum(account.getAccountNum())
-			.transType("401")
-			.transTypeDetail("출금")
-			.transDtime(Timestamp.valueOf(LocalDateTime.now()))
-			.transNo(getTransactionNo())
-			.prodName("PayAll")
-			.prodCode("ONLINE")
-			.transAmt(BigDecimal.valueOf(request.getPrice()))
-			.settleAmt(BigDecimal.valueOf(request.getPrice()))
-			.balanceAmt(updatedBalance)
-			.currencyCode("KRW")
-			.account(account)
-			.build();
+		List<AccountTransaction> transactions = new ArrayList<>();
 
-		accountTransactionRepository.save(accountTransaction);
+		for (TransactionCreateDto request : requestList) {
+			updatedBalance = updatedBalance.subtract(BigDecimal.valueOf(request.getPrice()));
+
+			// 거래 내역 update
+			AccountTransaction accountTransaction = AccountTransaction.builder()
+				.accountNum(account.getAccountNum())
+				.transType("401")
+				.transTypeDetail("출금")
+				.transDtime(Timestamp.valueOf(LocalDateTime.now()))
+				.transNo(getTransactionNo())
+				.prodName(request.getShopName())
+				.prodCode("PAYALL")
+				.transAmt(BigDecimal.valueOf(request.getPrice()))
+				.settleAmt(BigDecimal.valueOf(request.getPrice()))
+				.balanceAmt(updatedBalance)
+				.currencyCode("KRW")
+				.account(account)
+				.build();
+
+			transactions.add(accountTransaction);
+		}
+		accountTransactionRepository.saveAll(transactions);
 
 		// 계좌 정보에 잔액 update
 		accountBasicInfo.setAvailBalance(updatedBalance);

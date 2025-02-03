@@ -1,5 +1,7 @@
 package com.example.PayAll_DataProvider.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -88,13 +90,13 @@ public class MydataController {
 
 	@PostMapping("/purchase")
 	public ResponseEntity<String> setTransaction(@RequestHeader("Authorization") String authorization, @RequestBody
-	TransactionCreateDto transactionCreateDto) {
+	List<TransactionCreateDto> transactionCreateDtos) {
 		String authId = jwtService.extractAuthId(authorization);
 		Long userId = userRepository.findByAuthId(authId)
 			.orElseThrow(() -> new UnauthorizedException("유효하지 않은 토큰입니다."))
 			.getId();
 
-		return ResponseEntity.ok(mydataService.setTransaction(userId, transactionCreateDto));
+		return ResponseEntity.ok(mydataService.setTransaction(userId, transactionCreateDtos));
 	}
 
 }
