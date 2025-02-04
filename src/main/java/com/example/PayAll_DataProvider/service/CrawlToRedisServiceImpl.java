@@ -188,8 +188,9 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			log.info("!size" + lowestPriceDtoList.size());
 			if (lowestPriceDtoList != null) {
 				String jsonValue = objectMapper.writeValueAsString(lowestPriceDtoList.get(0));
+				log.info("!jsonValue" + jsonValue);
 				redisTemplate.opsForValue().set(pCode, jsonValue);
-
+				log.info("redis 저장!!!");
 				return lowestPriceDtoList.get(0);
 			}
 			throw new NotFoundException("상품 정보를 찾을 수 없습니다.");
