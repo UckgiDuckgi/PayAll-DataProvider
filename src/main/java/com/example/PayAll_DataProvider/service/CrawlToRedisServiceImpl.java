@@ -2,7 +2,8 @@ package com.example.PayAll_DataProvider.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,6 +40,7 @@ import com.example.PayAll_DataProvider.dto.LowestPriceDto;
 import com.example.PayAll_DataProvider.dto.SearchProductDto;
 import com.example.PayAll_DataProvider.mapper.SearchProductMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -75,7 +77,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"12673118", "2012426", "16454519", "1992016", "1008149"
 	);
 
-	List<String> productNames = Arrays.asList("무항생제 신선한 대란", "곰곰 만능두부, 300g, 1개", "오뚜기옛날 사골곰탕 국물",
+	List<String> productNames = Arrays.asList("무항생제 신선한 대란, 30구, 1개", "곰곰 만능두부, 300g, 1개", "오뚜기옛날 사골곰탕 국물",
 		"동원홈푸드 통목전지 (냉동), 1kg, 1개", "foodi 양꼬치시즈닝, 130g, 1개", "당일생산 신선 건두부 생생 포두부 두부면, 500g, 1개",
 		"다슈 솔루션 퍼퓸 데오 바디스프레이 프레쉬 블루향",
 		"다우니 실내건조 플러스 초고농축 섬유유연제 프레시클린 본품, 1.05L, 3개");
@@ -161,6 +163,34 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 	}
 
+	// productName로 Redis에서 상품 정보 조회
+	@Override
+	public LowestPriceDto getProductByName(String productName) throws UnsupportedEncodingException {
+		String decodedProductName = URLDecoder.decode(productName, "UTF-8");
+		System.out.println("decodedProductName = " + decodedProductName);
+		Set<String> keys = redisTemplate.keys("*");
+
+		for (String key : keys) {
+			String productJson = (String)redisTemplate.opsForValue().get(key);
+
+			if (productJson != null) {
+				try {
+					JsonNode jsonNode = objectMapper.readTree(productJson);
+					String storedProductName = jsonNode.get("productName").asText();
+					System.out.println("storedProductName = " + storedProductName);
+
+					if (storedProductName.equalsIgnoreCase(decodedProductName)) {
+						System.out.println("성공");
+						return objectMapper.readValue(productJson, LowestPriceDto.class);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public List<SearchProductDto> getSearchProducts(String query, int page, int size) {
 
@@ -196,15 +226,13 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
         	// // 3. 요소들이 클릭 가능할 때까지 대기
        	 	// wait.until(ExpectedConditions.elementToBeClickable(
             // 	By.cssSelector("li[id^=productItem]")));
-			String pageSource1 = searchDriver.getPageSource();
-        	log.info("페이지 소스1: {}", pageSource1.substring(0, Math.min(pageSource1.length(), 1000)));
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
 
 			String pageSource = searchDriver.getPageSource();
         	log.info("페이지 소스2: {}", pageSource.substring(0, Math.min(pageSource.length(), 1000)));
-        
+
 			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
 				return Collections.emptyList();
