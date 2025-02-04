@@ -89,11 +89,12 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	public WebDriver createNewWebDriver() {
-		// File chromeDriverFile = new File("/usr/bin/chromedriver");
-		// ChromeDriverService service = new ChromeDriverService.Builder()
-		// 	.usingDriverExecutable(chromeDriverFile)
-		// 	.usingAnyFreePort()
-		// 	.build();
+		File chromeDriverFile = new File("/usr/bin/chromedriver");
+		ChromeDriverService service = new ChromeDriverService.Builder()
+			.usingDriverExecutable(chromeDriverFile)
+			.usingAnyFreePort()
+			.withLogFile(new File("chromedriver.log"))
+			.build();
 
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless");
@@ -103,7 +104,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-extensions");
 		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(options);
+		return new ChromeDriver(service, options);
 	}
 
 	// Redis에서 상품 정보 조회
@@ -138,21 +139,21 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 			searchDriver.get(url);
 
-			// 명시적 대기 조건 추가
-        	WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+			// // 명시적 대기 조건 추가
+        	// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
         
-        	// 1. 페이지 로딩 완료 대기
-        	wait.until(webDriver -> ((JavascriptExecutor) webDriver)
-            	.executeScript("return document.readyState")
-            	.equals("complete"));
+        	// // 1. 페이지 로딩 완료 대기
+        	// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
+            // 	.executeScript("return document.readyState")
+            // 	.equals("complete"));
             
-        	// 2. 특정 요소가 나타날 때까지 대기
-        	wait.until(ExpectedConditions.presenceOfElementLocated(
-            	By.cssSelector("li[id^=productItem]")));
+        	// // 2. 특정 요소가 나타날 때까지 대기
+        	// wait.until(ExpectedConditions.presenceOfElementLocated(
+            // 	By.cssSelector("li[id^=productItem]")));
         
-        	// 3. 요소들이 클릭 가능할 때까지 대기
-       	 	wait.until(ExpectedConditions.elementToBeClickable(
-            	By.cssSelector("li[id^=productItem]")));
+        	// // 3. 요소들이 클릭 가능할 때까지 대기
+       	 	// wait.until(ExpectedConditions.elementToBeClickable(
+            // 	By.cssSelector("li[id^=productItem]")));
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
