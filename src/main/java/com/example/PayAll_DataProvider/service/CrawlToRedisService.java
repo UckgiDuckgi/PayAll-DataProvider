@@ -10,9 +10,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 public interface CrawlToRedisService {
 	void saveProductToRedis();
 
+	void saveToRedis() throws JsonProcessingException;
+
 	LowestPriceDto getProduct(String pCode) throws JsonProcessingException;
 
 	List<SearchProductDto> getSearchProducts(String query, int page, int size);
 
 	LowestPriceDto crawlingProduct(String pCode) throws IOException;
+
 }

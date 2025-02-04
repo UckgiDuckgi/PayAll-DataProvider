@@ -38,7 +38,7 @@ public class CrawlToRedisController {
 	@GetMapping("/search")
 	public ResponseEntity<List<SearchProductDto>> searchProducts(@RequestParam int page, @RequestParam int size,
 		@RequestParam String query) {
-		
+
 		return ResponseEntity.ok(crawlToRedisService.getSearchProducts(query, page, size));
 
 	}
@@ -46,6 +46,11 @@ public class CrawlToRedisController {
 	@GetMapping("/product")
 	public ResponseEntity<LowestPriceDto> crawlingProduct(@RequestParam String pcode) throws IOException {
 		return ResponseEntity.ok(crawlToRedisService.crawlingProduct(pcode));
+	}
+
+	@GetMapping("/list")
+	public void saveToRedis() throws IOException {
+		crawlToRedisService.saveToRedis();
 	}
 
 }
