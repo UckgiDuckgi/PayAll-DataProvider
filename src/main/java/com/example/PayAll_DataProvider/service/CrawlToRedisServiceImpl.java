@@ -2,6 +2,7 @@ package com.example.PayAll_DataProvider.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
@@ -27,6 +29,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -133,6 +137,22 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		try {
 
 			searchDriver.get(url);
+
+			// 명시적 대기 조건 추가
+        	WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+        
+        	// 1. 페이지 로딩 완료 대기
+        	wait.until(webDriver -> ((JavascriptExecutor) webDriver)
+            	.executeScript("return document.readyState")
+            	.equals("complete"));
+            
+        	// 2. 특정 요소가 나타날 때까지 대기
+        	wait.until(ExpectedConditions.presenceOfElementLocated(
+            	By.cssSelector("li[id^=productItem]")));
+        
+        	// 3. 요소들이 클릭 가능할 때까지 대기
+       	 	wait.until(ExpectedConditions.elementToBeClickable(
+            	By.cssSelector("li[id^=productItem]")));
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
