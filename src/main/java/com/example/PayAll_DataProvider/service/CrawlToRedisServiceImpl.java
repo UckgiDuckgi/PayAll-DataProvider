@@ -1,8 +1,8 @@
 package com.example.PayAll_DataProvider.service;
 
-import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,16 +21,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -39,6 +35,7 @@ import com.example.PayAll_DataProvider.dto.LowestPriceDto;
 import com.example.PayAll_DataProvider.dto.SearchProductDto;
 import com.example.PayAll_DataProvider.mapper.SearchProductMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -75,7 +72,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"12673118", "2012426", "16454519", "1992016", "1008149"
 	);
 
-	List<String> productNames = Arrays.asList("무항생제 신선한 대란", "곰곰 만능두부, 300g, 1개", "오뚜기옛날 사골곰탕 국물",
+	List<String> productNames = Arrays.asList("무항생제 신선한 대란, 30구, 1개", "곰곰 만능두부, 300g, 1개", "오뚜기옛날 사골곰탕 국물",
 		"동원홈푸드 통목전지 (냉동), 1kg, 1개", "foodi 양꼬치시즈닝, 130g, 1개", "당일생산 신선 건두부 생생 포두부 두부면, 500g, 1개",
 		"다슈 솔루션 퍼퓸 데오 바디스프레이 프레쉬 블루향",
 		"다우니 실내건조 플러스 초고농축 섬유유연제 프레시클린 본품, 1.05L, 3개");
@@ -116,12 +113,12 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	public WebDriver createNewWebDriver() {
-		File chromeDriverFile = new File("/usr/bin/chromedriver");
-		ChromeDriverService service = new ChromeDriverService.Builder()
-			.usingDriverExecutable(chromeDriverFile)
-			.usingAnyFreePort()
-			.withLogFile(new File("chromedriver.log"))
-			.build();
+		// File chromeDriverFile = new File("/usr/bin/chromedriver");
+		// ChromeDriverService service = new ChromeDriverService.Builder()
+		// 	.usingDriverExecutable(chromeDriverFile)
+		// 	.usingAnyFreePort()
+		// 	.withLogFile(new File("chromedriver.log"))
+		// 	.build();
 
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless");
@@ -131,10 +128,10 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-extensions");
 		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(service, options);
+		return new ChromeDriver(options);
 	}
 
-	// Redis에서 상품 정보 조회
+	// pcode로 Redis에서 상품 정보 조회
 	@Override
 	public LowestPriceDto getProduct(String pCode) throws JsonProcessingException {
 		String productJson = (String)redisTemplate.opsForValue().get(pCode);
@@ -144,6 +141,34 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 		return objectMapper.readValue(productJson, LowestPriceDto.class);
 
+	}
+
+	// productName로 Redis에서 상품 정보 조회
+	@Override
+	public LowestPriceDto getProductByName(String productName) throws UnsupportedEncodingException {
+		String decodedProductName = URLDecoder.decode(productName, "UTF-8");
+		System.out.println("decodedProductName = " + decodedProductName);
+		Set<String> keys = redisTemplate.keys("*");
+
+		for (String key : keys) {
+			String productJson = (String)redisTemplate.opsForValue().get(key);
+
+			if (productJson != null) {
+				try {
+					JsonNode jsonNode = objectMapper.readTree(productJson);
+					String storedProductName = jsonNode.get("productName").asText();
+					System.out.println("storedProductName = " + storedProductName);
+
+					if (storedProductName.equalsIgnoreCase(decodedProductName)) {
+						System.out.println("성공");
+						return objectMapper.readValue(productJson, LowestPriceDto.class);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -167,20 +192,20 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			searchDriver.get(url);
 
 			// // 명시적 대기 조건 추가
-        	// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
-        
-        	// // 1. 페이지 로딩 완료 대기
-        	// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
-            // 	.executeScript("return document.readyState")
-            // 	.equals("complete"));
-            
-        	// // 2. 특정 요소가 나타날 때까지 대기
-        	// wait.until(ExpectedConditions.presenceOfElementLocated(
-            // 	By.cssSelector("li[id^=productItem]")));
-        
-        	// // 3. 요소들이 클릭 가능할 때까지 대기
-       	 	// wait.until(ExpectedConditions.elementToBeClickable(
-            // 	By.cssSelector("li[id^=productItem]")));
+			// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+
+			// // 1. 페이지 로딩 완료 대기
+			// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
+			// 	.executeScript("return document.readyState")
+			// 	.equals("complete"));
+
+			// // 2. 특정 요소가 나타날 때까지 대기
+			// wait.until(ExpectedConditions.presenceOfElementLocated(
+			// 	By.cssSelector("li[id^=productItem]")));
+
+			// // 3. 요소들이 클릭 가능할 때까지 대기
+			// wait.until(ExpectedConditions.elementToBeClickable(
+			// 	By.cssSelector("li[id^=productItem]")));
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
@@ -332,7 +357,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 
 	}
-		
+
 	@Override
 	public void saveToRedis() throws JsonProcessingException {
 
