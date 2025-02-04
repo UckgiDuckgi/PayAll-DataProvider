@@ -22,7 +22,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
@@ -30,8 +29,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -76,7 +73,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"1754500", "3093363", "1109302", "7090609", "9637956",
 		"12673118", "2012426", "16454519", "1992016", "1008149"
 	);
-
+	//
 	List<String> productNames = Arrays.asList("무항생제 신선한 대란, 30구, 1개", "곰곰 만능두부, 300g, 1개", "오뚜기옛날 사골곰탕 국물",
 		"동원홈푸드 통목전지 (냉동), 1kg, 1개", "foodi 양꼬치시즈닝, 130g, 1개", "당일생산 신선 건두부 생생 포두부 두부면, 500g, 1개",
 		"다슈 솔루션 퍼퓸 데오 바디스프레이 프레쉬 블루향",
@@ -89,6 +86,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/rs_quotation_api/nkgbfidr/9ab53b0735d2455a8a4342ed1a8d48f3.jpg",
 		"https://thumbnail9.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/606746242064318-b7bf2dc9-cf35-4e86-99f8-a65a5ef20fa4.jpg",
 		"https://thumbnail9.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/8f8b/f6688c79a2bcdec66c1039143b705a885620b65ffe62349fd4d0be590890.png",
+		"https://thumbnail10.coupangcdn.com/thumbnails/remote/492x492ex/image/1025_amir_coupang_oct_80k/45f6/6bf791173d71b8bc986e38deae845e5f21d7417335126a8833e9721d61a7.jpg",
 		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/572a/a51864e78d3c6512fae8d982557d4185bc906752c36e20c87c214543160b.jpg"
 
 	);
@@ -131,7 +129,8 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
-		options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " + "(KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
+		options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+			+ "(KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
 		options.addArguments("sec-ch-ua-platform='Windows'");
 		options.addArguments("accept-language=ko,en-US;q=0.9,en;q=0.8");
 		options.addArguments("sec-fetch-site=same-origin");
@@ -212,26 +211,26 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			searchDriver.get(url);
 
 			// // 명시적 대기 조건 추가
-        	// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
-        
-        	// // 1. 페이지 로딩 완료 대기
-        	// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
-            // 	.executeScript("return document.readyState")
-            // 	.equals("complete"));
-            
-        	// // 2. 특정 요소가 나타날 때까지 대기
-        	// wait.until(ExpectedConditions.presenceOfElementLocated(
-            // 	By.cssSelector("li[id^=productItem]")));
-        
-        	// // 3. 요소들이 클릭 가능할 때까지 대기
-       	 	// wait.until(ExpectedConditions.elementToBeClickable(
-            // 	By.cssSelector("li[id^=productItem]")));
+			// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+
+			// // 1. 페이지 로딩 완료 대기
+			// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
+			// 	.executeScript("return document.readyState")
+			// 	.equals("complete"));
+
+			// // 2. 특정 요소가 나타날 때까지 대기
+			// wait.until(ExpectedConditions.presenceOfElementLocated(
+			// 	By.cssSelector("li[id^=productItem]")));
+
+			// // 3. 요소들이 클릭 가능할 때까지 대기
+			// wait.until(ExpectedConditions.elementToBeClickable(
+			// 	By.cssSelector("li[id^=productItem]")));
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
 
 			String pageSource = searchDriver.getPageSource();
-        	log.info("페이지 소스2: {}", pageSource.substring(0, Math.min(pageSource.length(), 1000)));
+			log.info("페이지 소스2: {}", pageSource.substring(0, Math.min(pageSource.length(), 1000)));
 
 			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
@@ -380,7 +379,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 
 	}
-		
+
 	@Override
 	public void saveToRedis() throws JsonProcessingException {
 
