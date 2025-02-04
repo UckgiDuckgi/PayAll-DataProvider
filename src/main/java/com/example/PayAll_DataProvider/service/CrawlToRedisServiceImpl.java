@@ -85,11 +85,11 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	public WebDriver createNewWebDriver() {
-		File chromeDriverFile = new File("/usr/bin/chromedriver");
-		ChromeDriverService service = new ChromeDriverService.Builder()
-			.usingDriverExecutable(chromeDriverFile)
-			.usingAnyFreePort()
-			.build();
+		// File chromeDriverFile = new File("/usr/bin/chromedriver");
+		// ChromeDriverService service = new ChromeDriverService.Builder()
+		// 	.usingDriverExecutable(chromeDriverFile)
+		// 	.usingAnyFreePort()
+		// 	.build();
 
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless");
@@ -99,7 +99,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-extensions");
 		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(service, options);
+		return new ChromeDriver(options);
 	}
 
 	// Redis에서 상품 정보 조회
