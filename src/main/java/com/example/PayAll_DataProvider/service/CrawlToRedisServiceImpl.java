@@ -166,21 +166,31 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 
 			searchDriver.get(url);
 
-			// // 명시적 대기 조건 추가
-        	// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+			new WebDriverWait(searchDriver, Duration.ofSeconds(10))
+            .until(webDriver -> ((JavascriptExecutor) webDriver)
+                .executeScript("return document.readyState")
+                .equals("complete"));
         
-        	// // 1. 페이지 로딩 완료 대기
-        	// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
-            // 	.executeScript("return document.readyState")
-            // 	.equals("complete"));
+        // 2. AJAX 요청 완료 대기
+        	Thread.sleep(2000);  // AJAX 로딩을 위한 최소 대기 시간
+        
+        // 3. 특정 요소가 보일 때까지 대기
+        	WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+        	wait.until(ExpectedConditions.presenceOfElementLocated(
+           		By.cssSelector(".main_prodlist"))); // 상품 리스트 컨테이너
             
-        	// // 2. 특정 요소가 나타날 때까지 대기
-        	// wait.until(ExpectedConditions.presenceOfElementLocated(
-            // 	By.cssSelector("li[id^=productItem]")));
+        // 4. JavaScript로 요소 확인
+        	boolean hasProducts = (boolean) ((JavascriptExecutor) searchDriver)
+            	.executeScript("return !!document.querySelector('li[id^=productItem]')");
+            
+        	log.info("상품 존재 여부: {}", hasProducts);
         
-        	// // 3. 요소들이 클릭 가능할 때까지 대기
-       	 	// wait.until(ExpectedConditions.elementToBeClickable(
-            // 	By.cssSelector("li[id^=productItem]")));
+        // 5. 페이지 소스 확인 (디버깅용)
+        	String pageSource = searchDriver.getPageSource();
+        	log.debug("페이지 소스 일부: {}", 
+            	pageSource.substring(0, Math.min(pageSource.length(), 1000)));
+
+
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
