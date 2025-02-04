@@ -224,6 +224,22 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		log.info("상품 데이터 Redis 저장 완료");
 	}
 
+	@Override
+	public void saveToRedis() throws JsonProcessingException {
+		LowestPriceDto dto = LowestPriceDto.builder()
+			.pCode(10180392L)
+			.shopUrl(
+				"https://www.coupang.com/vp/products/19984840?itemId=24297003361&vendorItemId=91623037023&src=1032034&spec=10305199&addtag=400&ctag=19984840&lptag=I24297003361&itime=20250204172233&pageType=PRODUCT&pageValue=19984840&wPcid=17358916727837097809278&wRef=prod.danawa.com&wTime=20250204172233&redirect=landing&mcid=079ed67e683b43c9b25b2706a215f097")
+			.productName("군용 핫팩 마이핫보온대 군인 손난로 160g 대용량, 50개")
+			.productImage(
+				"//img.danawa.com/prod_img/500000/392/180/img/10180392_1.jpg?shrink=330:*&amp;_v=20241209102602")
+			.price(34900L)
+			.shopName("Coupang")
+			.build();
+		String jsonValue = objectMapper.writeValueAsString(dto);
+		redisTemplate.opsForValue().set(String.valueOf(dto.getPCode()), jsonValue);
+	}
+
 	// 상품 상세 페이지 크롤링
 	private List<LowestPriceDto> crawlProductInfo(String pCode, int shopCount) throws IOException {
 		String url = baseUrl + pCode;
