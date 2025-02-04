@@ -71,6 +71,33 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"12673118", "2012426", "16454519", "1992016", "1008149"
 	);
 
+	List<String> productNames = Arrays.asList("무항생제 신선한 대란", "곰곰 만능두부, 300g, 1개", "오뚜기옛날 사골곰탕 국물",
+		"동원홈푸드 통목전지 (냉동), 1kg, 1개", "foodi 양꼬치시즈닝, 130g, 1개", "당일생산 신선 건두부 생생 포두부 두부면, 500g, 1개",
+		"다슈 솔루션 퍼퓸 데오 바디스프레이 프레쉬 블루향",
+		"다우니 실내건조 플러스 초고농축 섬유유연제 프레시클린 본품, 1.05L, 3개");
+
+	List<String> productImages = Arrays.asList(
+		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/110105750838087-30e2fb29-2d8b-4529-80ff-db7665fed6a4.jpg",
+		"https://thumbnail8.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/623014999248534-b4f1c0c1-532b-496f-838f-a53ab690deb4.jpg",
+		"https://thumbnail8.coupangcdn.com/thumbnails/remote/492x492ex/image/1025_amir_coupang_oct_80k/a555/384cd231818943331f2ce2cebcfa30f01fe4eac3431a368e699485789ee2.jpg",
+		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/rs_quotation_api/nkgbfidr/9ab53b0735d2455a8a4342ed1a8d48f3.jpg",
+		"https://thumbnail9.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/606746242064318-b7bf2dc9-cf35-4e86-99f8-a65a5ef20fa4.jpg",
+		"https://thumbnail9.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/8f8b/f6688c79a2bcdec66c1039143b705a885620b65ffe62349fd4d0be590890.png",
+		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/572a/a51864e78d3c6512fae8d982557d4185bc906752c36e20c87c214543160b.jpg"
+
+	);
+	List<String> shopUrls = Arrays.asList(
+		"https://www.coupang.com/vp/products/4842938988?vendorItemId=73556670010&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/7941558764?vendorItemId=88923203912&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/7470370114?vendorItemId=86601386346&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/7534882027?vendorItemId=86895881505&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/5579837464?vendorItemId=76200787497&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/7255820555?vendorItemId=85512910866&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/7255549427?vendorItemId=4980465309&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/8544953877?vendorItemId=71805128607&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart="
+	);
+	List<Long> prices = Arrays.asList(7980L, 980L, 2860L, 10800L, 5300L, 6350L, 13320L, 19580L);
+
 	@PostConstruct
 	public void init() {
 		WebDriverManager.chromedriver().setup();
@@ -224,22 +251,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		log.info("상품 데이터 Redis 저장 완료");
 	}
 
-	@Override
-	public void saveToRedis() throws JsonProcessingException {
-		LowestPriceDto dto = LowestPriceDto.builder()
-			.pCode(10180392L)
-			.shopUrl(
-				"https://www.coupang.com/vp/products/19984840?itemId=24297003361&vendorItemId=91623037023&src=1032034&spec=10305199&addtag=400&ctag=19984840&lptag=I24297003361&itime=20250204172233&pageType=PRODUCT&pageValue=19984840&wPcid=17358916727837097809278&wRef=prod.danawa.com&wTime=20250204172233&redirect=landing&mcid=079ed67e683b43c9b25b2706a215f097")
-			.productName("군용 핫팩 마이핫보온대 군인 손난로 160g 대용량, 50개")
-			.productImage(
-				"//img.danawa.com/prod_img/500000/392/180/img/10180392_1.jpg?shrink=330:*&amp;_v=20241209102602")
-			.price(34900L)
-			.shopName("Coupang")
-			.build();
-		String jsonValue = objectMapper.writeValueAsString(dto);
-		redisTemplate.opsForValue().set(String.valueOf(dto.getPCode()), jsonValue);
-	}
-
 	// 상품 상세 페이지 크롤링
 	private List<LowestPriceDto> crawlProductInfo(String pCode, int shopCount) throws IOException {
 		String url = baseUrl + pCode;
@@ -299,6 +310,24 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			throw e;
 		}
 
+	}
+		
+	@Override
+	public void saveToRedis() throws JsonProcessingException {
+
+		for (int i = 0; i < productImages.size(); i++) {
+			LowestPriceDto dto = LowestPriceDto.builder()
+				.pCode(100000L + i)
+				.shopUrl(shopUrls.get(i))
+				.productName(productNames.get(i))
+				.productImage(productImages.get(i))
+				.price(prices.get(i))
+				.shopName("Coupang")
+				.build();
+
+			String jsonValue = objectMapper.writeValueAsString(dto);
+			redisTemplate.opsForValue().set(String.valueOf(dto.getPCode()), jsonValue);
+		}
 	}
 
 }
