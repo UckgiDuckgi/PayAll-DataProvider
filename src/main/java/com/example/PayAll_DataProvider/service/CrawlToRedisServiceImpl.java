@@ -29,7 +29,6 @@ import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.PayAll_DataProvider.dto.LowestPriceDto;
@@ -194,13 +193,13 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			}
 			throw new NotFoundException("상품 정보를 찾을 수 없습니다.");
 		} catch (Exception e) {
-			throw new RuntimeException("크롤링 실패");
+			throw new RuntimeException("크롤링 실패 " + e.getMessage());
 		}
 
 	}
 
 	@Override
-	@Scheduled(cron = "0 0 9 * * *")
+	// @Scheduled(cron = "0 0 9 * * *")
 	public void saveProductToRedis() {
 
 		Set<String> pcodes = new HashSet<>(pCodes);
