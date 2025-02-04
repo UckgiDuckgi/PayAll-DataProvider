@@ -76,8 +76,9 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	//
 	List<String> productNames = Arrays.asList("무항생제 신선한 대란, 30구, 1개", "곰곰 만능두부, 300g, 1개", "오뚜기옛날 사골곰탕 국물",
 		"동원홈푸드 통목전지 (냉동), 1kg, 1개", "foodi 양꼬치시즈닝, 130g, 1개", "당일생산 신선 건두부 생생 포두부 두부면, 500g, 1개",
-		"다슈 솔루션 퍼퓸 데오 바디스프레이 프레쉬 블루향",
-		"다우니 실내건조 플러스 초고농축 섬유유연제 프레시클린 본품, 1.05L, 3개");
+		"다슈 솔루션 퍼퓸 데오 바디스프레이 프레쉬 블루향, 200ml, 1개",
+		"다우니 실내건조 플러스 초고농축 섬유유연제 프레시클린 본품, 1.05L, 3개", "아몰리바 포마스 올리브오일, 1L, 1개", "코멧 키친 스텐 치즈 그레이터, 60 x 237 mm, 1개",
+		"곰곰 파슬리, 90g, 1개");
 
 	List<String> productImages = Arrays.asList(
 		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/110105750838087-30e2fb29-2d8b-4529-80ff-db7665fed6a4.jpg",
@@ -87,7 +88,10 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"https://thumbnail9.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/606746242064318-b7bf2dc9-cf35-4e86-99f8-a65a5ef20fa4.jpg",
 		"https://thumbnail9.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/8f8b/f6688c79a2bcdec66c1039143b705a885620b65ffe62349fd4d0be590890.png",
 		"https://thumbnail10.coupangcdn.com/thumbnails/remote/492x492ex/image/1025_amir_coupang_oct_80k/45f6/6bf791173d71b8bc986e38deae845e5f21d7417335126a8833e9721d61a7.jpg",
-		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/572a/a51864e78d3c6512fae8d982557d4185bc906752c36e20c87c214543160b.jpg"
+		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/572a/a51864e78d3c6512fae8d982557d4185bc906752c36e20c87c214543160b.jpg",
+		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/47d6/e610df0a6f936ad6d83b2956fbcecf3fe1b9ea26580705d15950364fb91e.jpg",
+		"https://thumbnail10.coupangcdn.com/thumbnails/remote/492x492ex/image/1025_amir_coupang_oct_80k/c5f6/d4082b5d2cb57cc28fe0ec7e067fd990041a1197b83d6421a5c8f6785442.jpg",
+		"https://thumbnail6.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/1082820167832702-5b80251b-9758-4004-99e4-a4d46024bda7.jpg"
 
 	);
 	List<String> shopUrls = Arrays.asList(
@@ -98,9 +102,12 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		"https://www.coupang.com/vp/products/5579837464?vendorItemId=76200787497&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
 		"https://www.coupang.com/vp/products/7255820555?vendorItemId=85512910866&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
 		"https://www.coupang.com/vp/products/7255549427?vendorItemId=4980465309&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
-		"https://www.coupang.com/vp/products/8544953877?vendorItemId=71805128607&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart="
+		"https://www.coupang.com/vp/products/8544953877?vendorItemId=71805128607&sourceType=MyCoupang_my_orders_list_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/33222751?vendorItemId=3254410022&sourceType=MyCoupang_order_detail_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/7187913119?vendorItemId=85292404398&sourceType=MyCoupang_order_detail_product_title&isAddedCart=",
+		"https://www.coupang.com/vp/products/8464349345?vendorItemId=91502499172&sourceType=MyCoupang_order_detail_product_title&isAddedCart="
 	);
-	List<Long> prices = Arrays.asList(7980L, 980L, 2860L, 10800L, 5300L, 6350L, 13320L, 19580L);
+	List<Long> prices = Arrays.asList(7980L, 980L, 2860L, 10800L, 5300L, 6350L, 13320L, 19580L, 14900L, 3190L, 5150L);
 
 	@PostConstruct
 	public void init() {

@@ -56,8 +56,9 @@ public class CrawlToRedisController {
 	}
 
 	@GetMapping("/list")
-	public void saveToRedis() throws IOException {
+	public ResponseEntity<String> saveToRedis() throws IOException {
 		crawlToRedisService.saveToRedis();
+		return ResponseEntity.ok("쿠팡 내역 크롤링 및 Redis 저장 완료");
 	}
 
 }
