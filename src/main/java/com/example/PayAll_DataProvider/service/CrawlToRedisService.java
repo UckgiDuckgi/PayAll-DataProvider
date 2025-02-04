@@ -1,6 +1,7 @@
 package com.example.PayAll_DataProvider.service;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import com.example.PayAll_DataProvider.dto.LowestPriceDto;
@@ -18,4 +19,5 @@ public interface CrawlToRedisService {
 
 	LowestPriceDto crawlingProduct(String pCode) throws IOException;
 
+	LowestPriceDto getProductByName(String productName) throws UnsupportedEncodingException;
 }

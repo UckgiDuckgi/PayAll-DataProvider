@@ -1,6 +1,7 @@
 package com.example.PayAll_DataProvider.controller;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,12 @@ public class CrawlToRedisController {
 	@GetMapping("/product/{pCode}")
 	public ResponseEntity<LowestPriceDto> getProduct(@PathVariable String pCode) throws JsonProcessingException {
 		return ResponseEntity.ok(crawlToRedisService.getProduct(pCode));
+	}
+
+	@GetMapping("/product/by-name/{productName}")
+	public ResponseEntity<LowestPriceDto> getProductByName(@PathVariable String productName) throws
+		UnsupportedEncodingException {
+		return ResponseEntity.ok(crawlToRedisService.getProductByName(productName));
 	}
 
 	@PostMapping("/test")
