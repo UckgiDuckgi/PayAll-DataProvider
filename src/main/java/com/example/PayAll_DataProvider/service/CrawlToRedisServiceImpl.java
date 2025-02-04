@@ -1,5 +1,6 @@
 package com.example.PayAll_DataProvider.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -21,12 +22,16 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -113,25 +118,40 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	}
 
 	public WebDriver createNewWebDriver() {
-		// File chromeDriverFile = new File("/usr/bin/chromedriver");
-		// ChromeDriverService service = new ChromeDriverService.Builder()
-		// 	.usingDriverExecutable(chromeDriverFile)
-		// 	.usingAnyFreePort()
-		// 	.withLogFile(new File("chromedriver.log"))
-		// 	.build();
+		File chromeDriverFile = new File("/usr/bin/chromedriver");
+		ChromeDriverService service = new ChromeDriverService.Builder()
+			.usingDriverExecutable(chromeDriverFile)
+			.usingAnyFreePort()
+			.withLogFile(new File("chromedriver.log"))
+			.build();
 
 		ChromeOptions options = new ChromeOptions();
-		options.addArguments("--headless");
+		options.addArguments("--headless=new");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
+		options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " + "(KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
+		options.addArguments("sec-ch-ua-platform='Windows'");
+		options.addArguments("accept-language=ko,en-US;q=0.9,en;q=0.8");
+		options.addArguments("sec-fetch-site=same-origin");
+		options.addArguments("sec-ch-ua-mobile=?0");
+		options.addArguments("accept-encoding=gzip, deflate, br, zstd");
+		options.addArguments("--disable-quic");
+		options.addArguments("--disable-setuid-sandbox");
+		options.addArguments("--disable-blink-features=AutomationControlled");
+		options.addArguments("--disable-machine-learning");
+		options.addArguments("--disable-speech-api");
+		options.addArguments("--disable-voice-input");
+		options.addArguments("--disable-translate");
+		options.addArguments("--start-minimized");
+		options.addArguments("--log-level=3");
 		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(options);
+		return new ChromeDriver(service, options);
 	}
 
-	// pcode로 Redis에서 상품 정보 조회
+	// Redis에서 상품 정보 조회
 	@Override
 	public LowestPriceDto getProduct(String pCode) throws JsonProcessingException {
 		String productJson = (String)redisTemplate.opsForValue().get(pCode);
@@ -192,23 +212,26 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			searchDriver.get(url);
 
 			// // 명시적 대기 조건 추가
-			// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
-
-			// // 1. 페이지 로딩 완료 대기
-			// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
-			// 	.executeScript("return document.readyState")
-			// 	.equals("complete"));
-
-			// // 2. 특정 요소가 나타날 때까지 대기
-			// wait.until(ExpectedConditions.presenceOfElementLocated(
-			// 	By.cssSelector("li[id^=productItem]")));
-
-			// // 3. 요소들이 클릭 가능할 때까지 대기
-			// wait.until(ExpectedConditions.elementToBeClickable(
-			// 	By.cssSelector("li[id^=productItem]")));
+        	// WebDriverWait wait = new WebDriverWait(searchDriver, Duration.ofSeconds(10));
+        
+        	// // 1. 페이지 로딩 완료 대기
+        	// wait.until(webDriver -> ((JavascriptExecutor) webDriver)
+            // 	.executeScript("return document.readyState")
+            // 	.equals("complete"));
+            
+        	// // 2. 특정 요소가 나타날 때까지 대기
+        	// wait.until(ExpectedConditions.presenceOfElementLocated(
+            // 	By.cssSelector("li[id^=productItem]")));
+        
+        	// // 3. 요소들이 클릭 가능할 때까지 대기
+       	 	// wait.until(ExpectedConditions.elementToBeClickable(
+            // 	By.cssSelector("li[id^=productItem]")));
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
+
+			String pageSource = searchDriver.getPageSource();
+        	log.info("페이지 소스2: {}", pageSource.substring(0, Math.min(pageSource.length(), 1000)));
 
 			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
@@ -357,7 +380,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		}
 
 	}
-
+		
 	@Override
 	public void saveToRedis() throws JsonProcessingException {
 
