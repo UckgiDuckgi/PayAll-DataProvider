@@ -185,6 +185,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	public LowestPriceDto crawlingProduct(String pCode) {
 		try {
 			List<LowestPriceDto> lowestPriceDtoList = crawlProductInfo(pCode, 1);
+			log.info("!size" + lowestPriceDtoList.size());
 			if (lowestPriceDtoList != null) {
 				String jsonValue = objectMapper.writeValueAsString(lowestPriceDtoList.get(0));
 				redisTemplate.opsForValue().set(pCode, jsonValue);
@@ -226,6 +227,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 	private List<LowestPriceDto> crawlProductInfo(String pCode, int shopCount) throws IOException {
 		String url = baseUrl + pCode;
 		List<LowestPriceDto> results = new ArrayList<>();
+		log.info("url = " + url);
 
 		try {
 			Document doc = Jsoup.connect(url).get();
