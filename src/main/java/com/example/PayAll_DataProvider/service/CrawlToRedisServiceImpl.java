@@ -124,7 +124,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			.build();
 
 		ChromeOptions options = new ChromeOptions();
-		// options.addArguments("--headless");
+		options.addArguments("--headless=new");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
@@ -182,10 +182,15 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
         	// // 3. 요소들이 클릭 가능할 때까지 대기
        	 	// wait.until(ExpectedConditions.elementToBeClickable(
             // 	By.cssSelector("li[id^=productItem]")));
+			String pageSource1 = searchDriver.getPageSource();
+        	log.debug("페이지 소스1: {}", pageSource1.substring(0, Math.min(pageSource1.length(), 1000)));
 
 			List<WebElement> productItems = searchDriver.findElements(By.cssSelector("li[id^=productItem]"));
 			System.out.println("searchDriver = " + searchDriver.getTitle());
 
+			String pageSource = searchDriver.getPageSource();
+        	log.debug("페이지 소스2: {}", pageSource.substring(0, Math.min(pageSource.length(), 1000)));
+        
 			if (productItems.isEmpty()) {
 				log.info("상품 리스트가 없습니다.");
 				return Collections.emptyList();
