@@ -130,6 +130,20 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
 		options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " + "(KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
+		options.addArguments("sec-ch-ua-platform='Windows'");
+		options.addArguments("accept-language=ko,en-US;q=0.9,en;q=0.8");
+		options.addArguments("sec-fetch-site=same-origin");
+		options.addArguments("sec-ch-ua-mobile=?0");
+		options.addArguments("accept-encoding=gzip, deflate, br, zstd");
+		options.addArguments("--disable-quic");
+		options.addArguments("--disable-setuid-sandbox");
+		options.addArguments("--disable-blink-features=AutomationControlled");
+		options.addArguments("--disable-machine-learning");
+		options.addArguments("--disable-speech-api");
+		options.addArguments("--disable-voice-input");
+		options.addArguments("--disable-translate");
+		options.addArguments("--start-minimized");
+		options.addArguments("--log-level=3");
 		// options.addArguments("--remote-debugging-port=" + port);
 
 		return new ChromeDriver(service, options);
