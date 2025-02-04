@@ -193,7 +193,7 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			}
 			throw new NotFoundException("상품 정보를 찾을 수 없습니다.");
 		} catch (Exception e) {
-			throw new RuntimeException("크롤링 실패");
+			throw new RuntimeException("크롤링 실패 " + e.getMessage());
 		}
 
 	}
