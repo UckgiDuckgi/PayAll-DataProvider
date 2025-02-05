@@ -136,13 +136,6 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
-		options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-			+ "(KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
-		options.addArguments("sec-ch-ua-platform='Windows'");
-		options.addArguments("accept-language=ko,en-US;q=0.9,en;q=0.8");
-		options.addArguments("sec-fetch-site=same-origin");
-		options.addArguments("sec-ch-ua-mobile=?0");
-		options.addArguments("accept-encoding=gzip, deflate, br, zstd");
 		options.addArguments("--disable-quic");
 		options.addArguments("--disable-setuid-sandbox");
 		options.addArguments("--disable-blink-features=AutomationControlled");
@@ -152,6 +145,18 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 		options.addArguments("--disable-translate");
 		options.addArguments("--start-minimized");
 		options.addArguments("--log-level=3");
+
+		options.addArguments("accept-language=ko,en-US;q=0.9,en;q=0.8");
+		options.addArguments("accept-encoding=gzip, deflate, br, zstd");
+		options.addArguments("pragma=no-cache");
+		options.addArguments("sec-ch-ua=\"Not A(Brand\";v=\"8\", \"Chromium\";v=\"132\", \"Google Chrome\";v=\"132\"");
+		options.addArguments("sec-ch-ua-mobile=?0");
+		options.addArguments("sec-ch-ua-platform=\"Windows\"");
+		options.addArguments("sec-fetch-dest=empty");
+		options.addArguments("sec-fetch-mode=cors");
+		options.addArguments("sec-fetch-site=same-origin");
+		options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+			+ "(KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
 		// options.addArguments("--remote-debugging-port=" + port);
 
 		return new ChromeDriver(service, options);
