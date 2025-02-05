@@ -22,6 +22,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.WebDriver;
@@ -131,30 +132,32 @@ public class CrawlToRedisServiceImpl implements CrawlToRedisService {
 			.build();
 
 		ChromeOptions options = new ChromeOptions();
+		// 필수 headless 설정
 		options.addArguments("--headless=new");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
-		options.addArguments("--disable-gpu");
-		options.addArguments("--disable-extensions");
-		options.addArguments("--disable-quic");
-		options.addArguments("--disable-setuid-sandbox");
-		options.addArguments("--disable-blink-features=AutomationControlled");
-		options.addArguments("--disable-machine-learning");
-		options.addArguments("--disable-speech-api");
-		options.addArguments("--disable-voice-input");
-		options.addArguments("--disable-translate");
-		options.addArguments("--log-level=3");
 
+		// 자연스러운 브라우저 설정
+		options.addArguments("--window-size=1920,1080");
+		options.addArguments("--start-maximized");
+		options.addArguments("--incognito");
+		options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " + "(KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
 		options.addArguments("accept-language=ko,en-US;q=0.9,en;q=0.8");
+		options.addArguments("sec-ch-ua-platform='Windows'");
+		options.addArguments("sec-ch-ua-mobile=?0");
 		options.addArguments("accept-encoding=gzip, deflate, br, zstd");
-		// options.addArguments("sec-ch-ua-mobile=?0");
-		options.addArguments("sec-ch-ua-platform=\"Linux\"");
-		// options.addArguments("sec-fetch-site=same-origin");
-		options.addArguments(
-			"user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.6834.159 Safari/537.36");
-		// options.addArguments("--remote-debugging-port=" + port);
 
-		return new ChromeDriver(service, options);
+		// WebDriver 특성 숨기기
+		options.addArguments("--disable-blink-features=AutomationControlled");
+
+		ChromeDriver driver = new ChromeDriver(service, options);
+
+		// WebDriver 특성 추가로 숨기기
+		((JavascriptExecutor) driver).executeScript(
+			"Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+		);
+
+		return driver;
 	}
 
 	// Redis에서 상품 정보 조회
